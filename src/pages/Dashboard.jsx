@@ -1,118 +1,94 @@
-import React, { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
-import { callSecure } from "@/api/http";
-import { Link } from "react-router-dom";
+// src/pages/Dashboard.jsx
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { callSecure } from '@/api/http';
 
 export default function Dashboard() {
-  const [email, setEmail] = useState(null);
-  const [calling, setCalling] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [session, setSession] = useState(null);
+  const [email, setEmail] = useState('');
   const [apiResult, setApiResult] = useState(null);
+  const [apiError, setApiError] = useState(null);
 
-  // Load the current user for a friendly header
   useEffect(() => {
-    let sub;
+    let mounted = true;
+
+    // initial session
     supabase.auth.getSession().then(({ data }) => {
-      const e = data.session?.user?.email ?? null;
-      setEmail(e);
+      if (!mounted) return;
+      setSession(data.session ?? null);
+      setEmail(data.session?.user?.email ?? '');
+      setLoading(false);
     });
-    sub = supabase.auth.onAuthStateChange((_evt, session) => {
-      setEmail(session?.user?.email ?? null);
+
+    // subscribe to auth changes
+    const { data: sub } = supabase.auth.onAuthStateChange((_evt, sess) => {
+      if (!mounted) return;
+      setSession(sess ?? null);
+      setEmail(sess?.user?.email ?? '');
     });
-    return () => sub?.data?.subscription?.unsubscribe?.();
+
+    return () => {
+      mounted = false;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
-  // === Debug helper: log your Supabase access token ===
-  async function logToken() {
-    const { data } = await supabase.auth.getSession();
-    const token = data.session?.access_token;
-    if (!token) {
-      console.warn("No access token (not signed in?).");
-    } else {
-      console.log("Access token:", token);
-    }
-  }
-
-  // === Test hitting your protected API on Render ===
-  async function handleCallSecure() {
-    try {
-      setCalling(true);
-      setApiResult(null);
-      // This helper sends the Supabase JWT as Authorization: Bearer <token>
-      // It hits https://aircasa-api.onrender.com/secure (configured in /api/http)
-      const json = await callSecure("/secure");
-      setApiResult(json);
-      alert("Secure API response:\n" + JSON.stringify(json, null, 2));
-    } catch (err) {
-      console.error(err);
-      alert(err?.message || String(err));
-    } finally {
-      setCalling(false);
-    }
-  }
-
-  async function handleSignOut() {
+  const handleSignOut = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/"; // back to marketing page
+    // optional: reload to clear any app state
+    window.location.href = '/';
+  };
+
+  const handleCallApi = async () => {
+    setApiError(null);
+    setApiResult(null);
+    try {
+      const json = await callSecure('/secure'); // GET https://aircasa-api.onrender.com/secure
+      setApiResult(json);
+      alert(JSON.stringify(json, null, 2)); // keep the quick confirmation
+    } catch (err) {
+      setApiError(err.message || String(err));
+      alert(err.message || String(err));
+    }
+  };
+
+  if (loading) {
+    return <div style={{ padding: 24 }}>Loading your dashboard…</div>;
+  }
+
+  if (!session) {
+    // App routes should have gated this, but just in case:
+    return (
+      <main style={{ padding: 24 }}>
+        <h2>Not signed in</h2>
+        <a href="/auth">Go to sign in</a>
+      </main>
+    );
   }
 
   return (
-    <main className="min-h-screen p-6">
-      <header className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold">AirCasa Dashboard</h1>
-          <p className="text-sm text-gray-500">
-            {email ? `Signed in as ${email}` : "Loading user…"}
-          </p>
-        </div>
-        <nav className="flex items-center gap-3">
-          <Link
-            to="/"
-            className="text-sm px-3 py-2 rounded border hover:bg-gray-50"
-          >
-            Home
-          </Link>
-          <button
-            onClick={handleSignOut}
-            className="text-sm px-3 py-2 rounded border hover:bg-gray-50"
-          >
-            Sign out
-          </button>
-        </nav>
-      </header>
+    <main style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
+      <h1>AirCasa Dashboard</h1>
+      <p style={{ marginTop: 8 }}>Signed in as: <strong>{email}</strong></p>
 
-      <section className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded border p-4">
-          <h2 className="font-medium mb-2">Debug: Log Token</h2>
-          <p className="text-sm text-gray-600 mb-3">
-            Click to print your Supabase access token in the browser console.
-          </p>
-          <button
-            onClick={logToken}
-            className="px-3 py-2 rounded bg-gray-900 text-white hover:bg-black"
-          >
-            Log Token to Console
-          </button>
-        </div>
+      <div style={{ display: 'flex', gap: 12, marginTop: 16 }}>
+        <button onClick={handleSignOut}>Sign out</button>
+        <button onClick={handleCallApi}>Call Secure API</button>
+      </div>
 
-        <div className="rounded border p-4">
-          <h2 className="font-medium mb-2">Secure API</h2>
-          <p className="text-sm text-gray-600 mb-3">
-            Calls your Render API (<code>/secure</code>) with your Supabase JWT.
-          </p>
-          <button
-            onClick={handleCallSecure}
-            disabled={calling}
-            className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-60 hover:bg-blue-700"
-          >
-            {calling ? "Calling…" : "Call Secure API"}
-          </button>
-          {apiResult && (
-            <pre className="mt-3 text-xs bg-gray-50 border rounded p-2 overflow-auto">
+      {apiError && (
+        <pre style={{ marginTop: 16, color: 'crimson', whiteSpace: 'pre-wrap' }}>
+          Error: {apiError}
+        </pre>
+      )}
+      {apiResult && (
+        <pre style={{ marginTop: 16, background: '#f6f8fa', padding: 12, borderRadius: 8, overflowX: 'auto' }}>
 {JSON.stringify(apiResult, null, 2)}
-            </pre>
-          )}
-        </div>
-      </section>
+        </pre>
+      )}
+
+      {/* TODO: Replace Base44-backed widgets with your new API/Supabase-driven components, step by step */}
     </main>
   );
 }
