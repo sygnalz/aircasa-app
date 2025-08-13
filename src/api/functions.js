@@ -1,35 +1,24 @@
-import { base44 } from './base44Client';
+// src/api/functions.js
+// De-Base44 shim: keep the same named exports so imports don’t break.
+// TODO: Implement each function against your Render API (VITE_API_URL) or Supabase.
 
+const notImplemented = (name) => {
+  throw new Error(`[AirCasa] Function "${name}" is not implemented yet (Base44 removed).`);
+};
 
-export const properties = base44.functions.properties;
-
-export const aiChat = base44.functions.aiChat;
-
-export const getVoices = base44.functions.getVoices;
-
-export const checkConversationHistory = base44.functions.checkConversationHistory;
-
-export const exportConversationLog = base44.functions.exportConversationLog;
-
-export const getUserReferralId = base44.functions.getUserReferralId;
-
-export const syncWithAttom = base44.functions.syncWithAttom;
-
-export const syncUserWithAirtable = base44.functions.syncUserWithAirtable;
-
-export const getAdminDashboardStats = base44.functions.getAdminDashboardStats;
-
-export const getIntakeForPropertyAdmin = base44.functions.getIntakeForPropertyAdmin;
-
-export const getConversationUserSummaries = base44.functions.getConversationUserSummaries;
-
-export const getUserConversationDetails = base44.functions.getUserConversationDetails;
-
-export const sendAdminMessage = base44.functions.sendAdminMessage;
-
-export const getUserChatHistory = base44.functions.getUserChatHistory;
-
-export const getAnalyticsData = base44.functions.getAnalyticsData;
-
-export const generateSpeech = base44.functions.generateSpeech;
-
+export const properties = async (...args) => notImplemented('properties');
+export const aiChat = async (...args) => notImplemented('aiChat');
+export const getVoices = async (...args) => notImplemented('getVoices');
+export const checkConversationHistory = async (...args) => notImplemented('checkConversationHistory');
+export const exportConversationLog = async (...args) => notImplemented('exportConversationLog');
+export const getUserReferralId = async (...args) => notImplemented('getUserReferralId');
+export const syncWithAttom = async (...args) => notImplemented('syncWithAttom');
+export const syncUserWithAirtable = async (...args) => notImplemented('syncUserWithAirtable');
+export const getAdminDashboardStats = async (...args) => notImplemented('getAdminDashboardStats');
+export const getIntakeForPropertyAdmin = async (...args) => notImplemented('getIntakeForPropertyAdmin');
+export const getConversationUserSummaries = async (...args) => notImplemented('getConversationUserSummaries');
+export const getUserConversationDetails = async (...args) => notImplemented('getUserConversationDetails');
+export const sendAdminMessage = async (...args) => notImplemented('sendAdminMessage');
+export const getUserChatHistory = async (...args) => notImplemented('getUserChatHistory');
+export const getAnalyticsData = async (...args) => notImplemented('getAnalyticsData');
+export const generateSpeech = async (...args) => notImplemented('generateSpeech');
