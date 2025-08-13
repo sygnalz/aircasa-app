@@ -114,7 +114,7 @@ export default function Dashboard() {
       // More specific error handling
       if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
         console.error("Authentication error - redirecting to login");
-        navigate(createPageUrl("Auth") + "?login=true");
+        navigate("/auth?login=true");
       } else {
         alert(`Could not load your dashboard. Reason: ${error.message}. Please try refreshing the page or contact support if the issue persists.`);
       }
@@ -143,7 +143,7 @@ export default function Dashboard() {
       console.error('Error exporting conversations:', error);
       if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
         alert('Session expired. Please log in again.');
-        navigate(createPageUrl("Auth") + "?login=true");
+        navigate("/auth?login=true");
       } else {
         alert('Error exporting conversations. Please try again.');
       }
@@ -170,7 +170,7 @@ export default function Dashboard() {
       console.error("Failed to execute referral link generation:", error);
       if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
         alert("Session expired. Please log in again.");
-        navigate(createPageUrl("Auth") + "?login=true");
+        navigate("/auth?login=true");
       } else {
         alert("An unexpected error occurred while generating your referral link. Please try again.");
       }

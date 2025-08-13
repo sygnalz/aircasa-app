@@ -25,7 +25,7 @@ export default function PropertyWorkspace() {
         }
         setCurrentUser(user);
       } catch (error) {
-        navigate(createPageUrl("Auth"), { replace: true });
+        navigate("/auth", { replace: true });
       } finally {
         setIsLoading(false);
       }

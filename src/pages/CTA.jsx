@@ -15,7 +15,7 @@ export default function CTA() {
           Join thousands of homeowners who have successfully sold their properties 
           using our AI-powered platform.
         </p>
-        <Link to={createPageUrl("Auth")}>
+        <Link to="/auth">
           <Button size="lg" className="bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 text-white font-semibold px-12 py-4 rounded-xl shadow-lg transform hover:scale-105 transition-all duration-200">
             Start Your Journey
             <ArrowRight className="w-5 h-5 ml-2" />
