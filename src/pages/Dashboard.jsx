@@ -1,249 +1,118 @@
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { useNavigate, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-
-// Lightweight inline “ReferralModal” (so we don’t depend on old Base44 components)
-function ReferralModal({ open, onClose, referralLink }) {
-  if (!open) return null;
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.35)",
-        display: "grid",
-        placeItems: "center",
-        zIndex: 50,
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          width: 480,
-          maxWidth: "90vw",
-          background: "#fff",
-          borderRadius: 12,
-          padding: 20,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 style={{ marginTop: 0, marginBottom: 12 }}>Invite a friend</h3>
-        <p style={{ margin: "0 0 12px" }}>
-          Share this link and get credit when they sign up:
-        </p>
-        <div
-          style={{
-            border: "1px solid #eee",
-            borderRadius: 8,
-            padding: 12,
-            background: "#fafafa",
-            wordBreak: "break-all",
-            marginBottom: 12,
-          }}
-        >
-          {referralLink}
-        </div>
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <Button
-            onClick={() => {
-              navigator.clipboard.writeText(referralLink);
-            }}
-          >
-            Copy link
-          </Button>
-          <Button variant="secondary" onClick={onClose}>
-            Close
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { callSecure } from "@/api/http";
+import { Link } from "react-router-dom";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
   const [email, setEmail] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [apiStatus, setApiStatus] = useState(null);
-  const [referralOpen, setReferralOpen] = useState(false);
-  const [referralLink, setReferralLink] = useState("");
+  const [calling, setCalling] = useState(false);
+  const [apiResult, setApiResult] = useState(null);
 
-  // Load current session and keep email in state
+  // Load the current user for a friendly header
   useEffect(() => {
+    let sub;
     supabase.auth.getSession().then(({ data }) => {
-      setEmail(data.session?.user?.email ?? null);
-      setLoading(false);
+      const e = data.session?.user?.email ?? null;
+      setEmail(e);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, sess) => {
-      setEmail(sess?.user?.email ?? null);
+    sub = supabase.auth.onAuthStateChange((_evt, session) => {
+      setEmail(session?.user?.email ?? null);
     });
-    return () => sub.subscription.unsubscribe();
+    return () => sub?.data?.subscription?.unsubscribe?.();
   }, []);
 
-  async function handleSignOut() {
-    await supabase.auth.signOut();
-    navigate("/", { replace: true }); // back to marketing page
-  }
-
-  async function callSecureApi() {
-    try {
-      setApiStatus("Calling…");
-      // Minimal client that forwards Supabase JWT lives in src/api/http.js
-      const { callSecure } = await import("@/api/http");
-      const json = await callSecure("/secure");
-      setApiStatus(JSON.stringify(json, null, 2));
-      alert(JSON.stringify(json, null, 2));
-    } catch (err) {
-      const msg = err?.message || String(err);
-      setApiStatus(`Error: ${msg}`);
-      alert(msg);
+  // === Debug helper: log your Supabase access token ===
+  async function logToken() {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    if (!token) {
+      console.warn("No access token (not signed in?).");
+    } else {
+      console.log("Access token:", token);
     }
   }
 
-  // --- Placeholders to replace Base44 behavior with your API ---
-  // TODO: implement these in your Render API and call them here.
-  async function fetchReferralLink() {
-    // EXAMPLE: GET /referral-id -> { id: "..."} then construct URL
-    // const res = await fetch(`${import.meta.env.VITE_API_URL}/referral-id`, { headers: { Authorization: `Bearer ${token}` }})
-    // const { id } = await res.json();
-    const demoId = "demo-ref-123"; // placeholder
-    const url = `${window.location.origin}/?ref=${demoId}`;
-    setReferralLink(url);
-    setReferralOpen(true);
+  // === Test hitting your protected API on Render ===
+  async function handleCallSecure() {
+    try {
+      setCalling(true);
+      setApiResult(null);
+      // This helper sends the Supabase JWT as Authorization: Bearer <token>
+      // It hits https://aircasa-api.onrender.com/secure (configured in /api/http)
+      const json = await callSecure("/secure");
+      setApiResult(json);
+      alert("Secure API response:\n" + JSON.stringify(json, null, 2));
+    } catch (err) {
+      console.error(err);
+      alert(err?.message || String(err));
+    } finally {
+      setCalling(false);
+    }
   }
 
-  async function syncUserWithAirtable() {
-    // EXAMPLE: POST /sync-user
-    alert("Sync user with Airtable → TODO (wire to your API)");
-  }
-
-  async function exportConversationLog() {
-    // EXAMPLE: GET /conversations/export -> triggers download
-    alert("Export conversation log → TODO (wire to your API)");
-  }
-
-  if (loading) {
-    return <main style={{ padding: 24 }}>Loading…</main>;
+  async function handleSignOut() {
+    await supabase.auth.signOut();
+    window.location.href = "/"; // back to marketing page
   }
 
   return (
-    <main style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>
-      {/* Header */}
-      <header
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: 24,
-        }}
-      >
+    <main className="min-h-screen p-6">
+      <header className="flex items-center justify-between mb-6">
         <div>
-          <h1 style={{ margin: 0 }}>Dashboard</h1>
-          <p style={{ margin: "6px 0 0", color: "#666" }}>
-            {email ? `Signed in as ${email}` : "Not signed in"}
+          <h1 className="text-2xl font-semibold">AirCasa Dashboard</h1>
+          <p className="text-sm text-gray-500">
+            {email ? `Signed in as ${email}` : "Loading user…"}
           </p>
         </div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Button onClick={handleSignOut}>Sign out</Button>
-          <Link to="/">
-            <Button variant="secondary">Go to site</Button>
+        <nav className="flex items-center gap-3">
+          <Link
+            to="/"
+            className="text-sm px-3 py-2 rounded border hover:bg-gray-50"
+          >
+            Home
           </Link>
-        </div>
+          <button
+            onClick={handleSignOut}
+            className="text-sm px-3 py-2 rounded border hover:bg-gray-50"
+          >
+            Sign out
+          </button>
+        </nav>
       </header>
 
-      {/* Quick Actions */}
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: 16,
-          marginBottom: 16,
-        }}
-      >
-        <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 16 }}>
-          <h3 style={{ marginTop: 0, marginBottom: 8 }}>Secure API</h3>
-          <p style={{ marginTop: 0, marginBottom: 12, color: "#555" }}>
-            Test your authenticated API on Render using your Supabase JWT.
+      <section className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded border p-4">
+          <h2 className="font-medium mb-2">Debug: Log Token</h2>
+          <p className="text-sm text-gray-600 mb-3">
+            Click to print your Supabase access token in the browser console.
           </p>
-          <Button onClick={callSecureApi}>Call /secure</Button>
-          {apiStatus && (
-            <pre
-              style={{
-                marginTop: 12,
-                border: "1px solid #eee",
-                background: "#fafafa",
-                padding: 12,
-                borderRadius: 8,
-                maxHeight: 200,
-                overflow: "auto",
-                whiteSpace: "pre-wrap",
-              }}
-            >
-              {apiStatus}
+          <button
+            onClick={logToken}
+            className="px-3 py-2 rounded bg-gray-900 text-white hover:bg-black"
+          >
+            Log Token to Console
+          </button>
+        </div>
+
+        <div className="rounded border p-4">
+          <h2 className="font-medium mb-2">Secure API</h2>
+          <p className="text-sm text-gray-600 mb-3">
+            Calls your Render API (<code>/secure</code>) with your Supabase JWT.
+          </p>
+          <button
+            onClick={handleCallSecure}
+            disabled={calling}
+            className="px-3 py-2 rounded bg-blue-600 text-white disabled:opacity-60 hover:bg-blue-700"
+          >
+            {calling ? "Calling…" : "Call Secure API"}
+          </button>
+          {apiResult && (
+            <pre className="mt-3 text-xs bg-gray-50 border rounded p-2 overflow-auto">
+{JSON.stringify(apiResult, null, 2)}
             </pre>
           )}
         </div>
-
-        <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 16 }}>
-          <h3 style={{ marginTop: 0, marginBottom: 8 }}>Referral</h3>
-          <p style={{ marginTop: 0, marginBottom: 12, color: "#555" }}>
-            Generate a personal referral link to share with friends.
-          </p>
-          <Button onClick={fetchReferralLink}>Get referral link</Button>
-        </div>
-
-        <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 16 }}>
-          <h3 style={{ marginTop: 0, marginBottom: 8 }}>Airtable</h3>
-          <p style={{ marginTop: 0, marginBottom: 12, color: "#555" }}>
-            Keep your user profile synced with Airtable (custom API).
-          </p>
-          <Button onClick={syncUserWithAirtable}>Sync user</Button>
-        </div>
-
-        <div style={{ border: "1px solid #eee", borderRadius: 12, padding: 16 }}>
-          <h3 style={{ marginTop: 0, marginBottom: 8 }}>Conversations</h3>
-          <p style={{ marginTop: 0, marginBottom: 12, color: "#555" }}>
-            Export your conversation log (custom API).
-          </p>
-          <Button onClick={exportConversationLog}>Export log</Button>
-        </div>
       </section>
-
-      {/* Getting Started / Navigation */}
-      <section
-        style={{
-          border: "1px solid #eee",
-          borderRadius: 12,
-          padding: 16,
-          marginTop: 16,
-        }}
-      >
-        <h2 style={{ marginTop: 0 }}>Next steps</h2>
-        <ul style={{ marginTop: 8, paddingLeft: 20 }}>
-          <li>
-            Start onboarding:{" "}
-            <Link to="/onboarding">
-              <strong>Onboarding</strong>
-            </Link>{" "}
-            (make sure this route exists).
-          </li>
-          <li>
-            Set your post‑login route (currently <code>/dashboard</code> in{" "}
-            <code>Auth.jsx</code>).
-          </li>
-          <li>
-            Replace the placeholders above with real API calls to your Render backend.
-          </li>
-        </ul>
-      </section>
-
-      {/* Referral Modal */}
-      <ReferralModal
-        open={referralOpen}
-        onClose={() => setReferralOpen(false)}
-        referralLink={referralLink}
-      />
     </main>
   );
 }
