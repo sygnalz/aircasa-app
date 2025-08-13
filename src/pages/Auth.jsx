@@ -21,7 +21,7 @@ export default function Auth() {
 
   // If signed in, send user to app home
   useEffect(() => {
-    if (session) navigate('/', { replace: true });
+    if (session) navigate('/dashboard', { replace: true });
   }, [session, navigate]);
 
   const signInGoogle = async () => {
