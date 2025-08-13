@@ -1,10 +1,5 @@
-import { createClient } from '@base44/sdk';
+// Base44 client removed — placeholder for future API integrations
 
-// Make appId configurable (keeps your current default)
-const APP_ID = import.meta.env.VITE_BASE44_APP_ID || "686ecf4049a15637f7b5d12a";
-
-// IMPORTANT: requiresAuth=false so Base44 doesn't show its own login UI
-export const base44 = createClient({
-  appId: APP_ID,
-  requiresAuth: false,
-});
+export function createBase44Client() {
+  throw new Error("Base44 client has been removed. Replace with your own API logic.");
+}
