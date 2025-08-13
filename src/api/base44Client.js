@@ -1,8 +1,9 @@
 import { createClient } from '@base44/sdk';
-// import { getAccessToken } from '@base44/sdk/utils/auth-utils';
 
-// Create a client with authentication required
+// Read from Vite env; fallback to the current hard-coded ID
+const APP_ID = import.meta.env.VITE_BASE44_APP_ID || '686ecf4049a15637f7b5d12a';
+
 export const base44 = createClient({
-  appId: "686ecf4049a15637f7b5d12a", 
-  requiresAuth: true // Ensure authentication is required for all operations
+  appId: APP_ID,
+  requiresAuth: true,
 });
