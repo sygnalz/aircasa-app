@@ -1,22 +1,15 @@
-import { base44 } from './base44Client';
+// src/api/integrations.js
+// De-Base44 shim: keep the same named exports so imports don’t break.
+// TODO: Implement against your Render API or 3rd‑party services as needed.
 
+const notImplemented = (name) => {
+  throw new Error(`[AirCasa] Integration "${name}" is not implemented yet (Base44 removed).`);
+};
 
-
-
-export const Core = base44.integrations.Core;
-
-export const InvokeLLM = base44.integrations.Core.InvokeLLM;
-
-export const SendEmail = base44.integrations.Core.SendEmail;
-
-export const UploadFile = base44.integrations.Core.UploadFile;
-
-export const GenerateImage = base44.integrations.Core.GenerateImage;
-
-export const ExtractDataFromUploadedFile = base44.integrations.Core.ExtractDataFromUploadedFile;
-
-
-
-
-
-
+export const Core = {
+  InvokeLLM: async (...args) => notImplemented('Core.InvokeLLM'),
+  SendEmail: async (...args) => notImplemented('Core.SendEmail'),
+  UploadFile: async (...args) => notImplemented('Core.UploadFile'),
+  GenerateImage: async (...args) => notImplemented('Core.GenerateImage'),
+  ExtractDataFromUploadedFile: async (...args) => notImplemented('Core.ExtractDataFromUploadedFile'),
+};
