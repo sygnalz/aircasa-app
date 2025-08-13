@@ -1,7 +1,10 @@
 import { Routes, Route, Outlet } from 'react-router-dom';
-import Auth from '@/pages/Auth.jsx';
 import { useEffect, useState } from 'react';
 import { supabase } from './lib/supabaseClient';
+
+import Auth from '@/pages/Auth.jsx';
+import Home from '@/pages/index.jsx';
+import Dashboard from '@/pages/Dashboard.jsx';
 
 function AuthGate({ children }) {
   const [loading, setLoading] = useState(true);
@@ -22,7 +25,10 @@ function AuthGate({ children }) {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: typeof window !== 'undefined' ? window.location.origin + '/auth' : undefined,
+        redirectTo:
+          typeof window !== 'undefined'
+            ? window.location.origin + '/auth'
+            : undefined,
       },
     });
   };
@@ -51,14 +57,13 @@ function ProtectedShell() {
 export default function App() {
   return (
     <Routes>
-      {/* Public route: real Supabase login screen */}
+      {/* Public pages */}
+      <Route path="/" element={<Home />} />
       <Route path="/auth" element={<Auth />} />
 
-      {/* Protected routes go under this wrapper */}
+      {/* Protected pages */}
       <Route element={<ProtectedShell />}>
-        {/* Example protected home; add your real routes here */}
-        {/* <Route path="/" element={<Home />} /> */}
-        <Route path="/" element={<div style={{ padding: 24 }}>App content goes here (gated)</div>} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Route>
     </Routes>
   );
