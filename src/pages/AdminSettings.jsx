@@ -18,7 +18,7 @@ export default function AdminSettings() {
           navigate(createPageUrl("Dashboard"), { replace: true });
         }
       } catch (error) {
-        navigate(createPageUrl("Auth"), { replace: true });
+        navigate("/", { replace: true }); // or "/dashboard" if that exists
       } finally {
         setIsLoading(false);
       }
