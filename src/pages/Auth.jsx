@@ -19,28 +19,22 @@ export default function Auth() {
   }, []);
 
   useEffect(() => {
-    if (session) {
-      // Already signed in → send to app home
-      navigate('/', { replace: true });
-    }
+    if (session) navigate('/', { replace: true });
   }, [session, navigate]);
 
   const signInGoogle = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: typeof window !== 'undefined' ? window.location.origin + '/auth' : undefined,
+        redirectTo: typeof window !== 'undefined'
+          ? window.location.origin + '/auth'
+          : undefined,
       },
     });
   };
 
-  if (loading) {
-    return <main style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>Loading…</main>;
-  }
-
-  if (session) {
-    return <main style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>Signed in. Redirecting…</main>;
-  }
+  if (loading) return <main style={{ padding: 24 }}>Loading…</main>;
+  if (session) return <main style={{ padding: 24 }}>Signed in. Redirecting…</main>;
 
   return (
     <main style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
