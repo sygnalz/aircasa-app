@@ -7,6 +7,7 @@ export default function Auth() {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
 
+  // Load current session and subscribe to changes
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session ?? null);
@@ -18,6 +19,7 @@ export default function Auth() {
     return () => sub.subscription.unsubscribe();
   }, []);
 
+  // If signed in, send user to app home
   useEffect(() => {
     if (session) navigate('/', { replace: true });
   }, [session, navigate]);
@@ -26,15 +28,19 @@ export default function Auth() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: typeof window !== 'undefined'
-          ? window.location.origin + '/auth'
-          : undefined,
+        redirectTo:
+          typeof window !== 'undefined' ? window.location.origin + '/auth' : undefined,
       },
     });
   };
 
-  if (loading) return <main style={{ padding: 24 }}>Loading…</main>;
-  if (session) return <main style={{ padding: 24 }}>Signed in. Redirecting…</main>;
+  if (loading) {
+    return <main style={{ padding: 24 }}>Loading…</main>;
+  }
+
+  if (session) {
+    return <main style={{ padding: 24 }}>Signed in. Redirecting…</main>;
+  }
 
   return (
     <main style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
