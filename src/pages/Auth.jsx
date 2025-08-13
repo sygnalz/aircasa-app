@@ -1,53 +1,91 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabaseClient';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { supabase } from "@/lib/supabaseClient";
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
 
-  // Load current session and subscribe to changes
+  // If a session already exists (or appears), go to /dashboard
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
+    let unsub = () => {};
+
+    (async () => {
+      const { data } = await supabase.auth.getSession();
       setSession(data.session ?? null);
       setLoading(false);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_evt, sess) => {
+
+      if (data.session) {
+        navigate("/dashboard", { replace: true });
+      }
+    })();
+
+    const sub = supabase.auth.onAuthStateChange((_evt, sess) => {
       setSession(sess ?? null);
+      if (sess) navigate("/dashboard", { replace: true });
     });
-    return () => sub.subscription.unsubscribe();
-  }, []);
 
-  // If signed in, send user to app home
-  useEffect(() => {
-    if (session) navigate('/dashboard', { replace: true });
-  }, [session, navigate]);
+    unsub = () => sub.data.subscription.unsubscribe();
+    return unsub;
+  }, [navigate]);
 
-  const signInGoogle = async () => {
+  const signInWithGoogle = async () => {
     await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
+        // after OAuth, come back to /auth; effect above will redirect to /dashboard
         redirectTo:
-          typeof window !== 'undefined' ? window.location.origin + '/auth' : undefined,
+          typeof window !== "undefined"
+            ? `${window.location.origin}/auth`
+            : undefined,
       },
     });
   };
 
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/", { replace: true });
+  };
+
+  // Optional UI tweaks based on querystring (e.g., ?register=true)
+  const wantRegister = params.get("register") === "true";
+
   if (loading) {
-    return <main style={{ padding: 24 }}>Loading…</main>;
+    return <main style={{ padding: 24 }}>Checking session…</main>;
   }
 
   if (session) {
-    return <main style={{ padding: 24 }}>Signed in. Redirecting…</main>;
+    // Very briefly shown if we landed here and immediately redirect
+    return <main style={{ padding: 24 }}>Redirecting to your dashboard…</main>;
   }
 
   return (
-    <main style={{ padding: 24, fontFamily: 'system-ui, sans-serif' }}>
-      <h1 style={{ marginBottom: 12 }}>AirCasa — Sign in</h1>
-      <button onClick={signInGoogle} style={{ padding: '8px 14px', cursor: 'pointer' }}>
-        Sign in with Google
-      </button>
+    <main style={{ padding: 24, fontFamily: "system-ui, sans-serif" }}>
+      <h1>AirCasa — {wantRegister ? "Create your account" : "Sign in"}</h1>
+      <p style={{ margin: "12px 0 20px" }}>
+        Continue with Google to {wantRegister ? "get started" : "access your account"}.
+      </p>
+      <button onClick={signInWithGoogle}>Continue with Google</button>
+
+      <div style={{ marginTop: 28, opacity: 0.7 }}>
+        <small>
+          Having trouble?{" "}
+          <button
+            onClick={signOut}
+            style={{
+              textDecoration: "underline",
+              background: "none",
+              border: 0,
+              padding: 0,
+              cursor: "pointer",
+            }}
+          >
+            Clear session
+          </button>
+        </small>
+      </div>
     </main>
   );
 }
