@@ -20,7 +20,7 @@ export default function PropertyWorkspace() {
       try {
         const user = await User.me();
         if (!user) {
-          navigate(createPageUrl("Auth"), { replace: true });
+          navigate("/", { replace: true }); // or "/dashboard" if that's your post-login page
           return;
         }
         setCurrentUser(user);
