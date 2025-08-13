@@ -1,15 +1,9 @@
-import { base44 } from './base44Client';
+// src/api/entities.js
+// De-Base44 shim: keep named exports so imports don't break.
+// TODO: Wire each entity to your own API (Render) or Supabase as needed.
 
-
-export const Signup = base44.entities.Signup;
-
-export const AIInsight = base44.entities.AIInsight;
-
-export const PropertyIntake = base44.entities.PropertyIntake;
-
-export const Task = base44.entities.Task;
-
-
-
-// auth sdk:
-export const User = base44.auth;
+export const Signup = {};          // TODO
+export const AIInsight = {};       // TODO
+export const PropertyIntake = {};  // TODO
+export const Task = {};            // TODO
+export const User = {};            // TODO
