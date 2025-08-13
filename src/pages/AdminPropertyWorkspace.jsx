@@ -43,7 +43,7 @@ export default function AdminPropertyWorkspace() {
     try {
       const user = await User.me();
       if (!user) {
-        navigate(createPageUrl("Auth"), { replace: true });
+        navigate("/auth", { replace: true });
         return;
       }
 
@@ -99,7 +99,7 @@ export default function AdminPropertyWorkspace() {
       const errorMessage = error.response?.data?.error || error.message;
 
       if (errorStatus === 401) {
-        navigate(createPageUrl("Auth"), { replace: true });
+        navigate("/auth", { replace: true });
         return;
       }
       

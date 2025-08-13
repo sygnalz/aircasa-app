@@ -82,7 +82,7 @@ export default function UserPropertyWorkspace() {
       const errorMessage = error.response?.data?.error || error.message;
 
       if (errorStatus === 401) {
-        navigate(createPageUrl("Auth"), { replace: true });
+        navigate("/auth", { replace: true });
         return;
       }
       

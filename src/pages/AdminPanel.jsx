@@ -21,7 +21,7 @@ export default function AdminPanel() {
         const currentUser = await User.me();
         if (!currentUser) {
           // Not logged in, redirect to auth
-          navigate(createPageUrl("Auth"), { replace: true });
+          navigate("/auth", { replace: true });
           return;
         }
 
@@ -35,7 +35,7 @@ export default function AdminPanel() {
         setUser(currentUser);
       } catch (error) {
         console.error("Error checking user role:", error);
-        navigate(createPageUrl("Auth"), { replace: true });
+        navigate("/auth", { replace: true });
       } finally {
         setIsLoading(false);
       }
