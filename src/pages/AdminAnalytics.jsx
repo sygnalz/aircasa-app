@@ -26,7 +26,7 @@ export default function AdminAnalytics() {
         }
         await loadAnalyticsData();
       } catch (error) {
-        navigate(createPageUrl("Auth"), { replace: true });
+        navigate("/auth", { replace: true });
       }
     };
     checkAdminAccess();

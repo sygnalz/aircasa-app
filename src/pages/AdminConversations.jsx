@@ -34,7 +34,7 @@ export default function AdminConversations() {
       loadUserSummaries();
     } catch (error) {
       console.error("Error checking admin access:", error);
-      navigate(createPageUrl("Auth"), { replace: true });
+      navigate("/auth", { replace: true });
     }
   };
 

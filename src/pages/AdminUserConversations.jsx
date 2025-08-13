@@ -43,7 +43,7 @@ export default function AdminUserConversations() {
         }
         fetchConversationDetails();
       } catch (e) {
-        navigate(createPageUrl("Auth"));
+        navigate("/auth", { replace: true });
       }
     };
     checkAdmin();
