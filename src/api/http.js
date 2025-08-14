@@ -1,18 +1,35 @@
-import { supabase } from '@/lib/supabaseClient';
+// aircasa-app/src/api/http.js
+import { getAccessToken } from "@/lib/getAccessToken";
 
-const API_BASE = import.meta.env.VITE_API_URL; // e.g., https://aircasa-api.onrender.com
+const API_BASE = import.meta.env.VITE_API_BASE; // e.g., https://aircasa-api.onrender.com
 
-export async function callSecure(path = '/secure') {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
-  if (!token) throw new Error('No Supabase session — please sign in.');
+function buildHeaders(initHeaders = {}, token, hasBody = false) {
+  const base = { ...initHeaders, Authorization: `Bearer ${token}` };
+  if (hasBody && !base["Content-Type"]) base["Content-Type"] = "application/json";
+  return base;
+}
 
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+export async function apiFetch(path, init = {}) {
+  const token = await getAccessToken();
+  if (!token) throw new Error("Not authenticated");
+
+  const url = `${API_BASE}${path}`;
+  const hasBody = typeof init.body !== "undefined";
+  const res = await fetch(url, { ...init, headers: buildHeaders(init.headers, token, hasBody) });
+
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`API ${res.status}: ${text || 'Request failed'}`);
+    try {
+      const body = await res.json();
+      throw new Error(body?.error || `HTTP ${res.status}`);
+    } catch {
+      const text = await res.text().catch(() => "");
+      throw new Error(text || `HTTP ${res.status}`);
+    }
   }
   return res.json();
+}
+
+// Convenience: /secure round-trip
+export async function callSecure() {
+  return apiFetch("/secure", { method: "GET" });
 }
