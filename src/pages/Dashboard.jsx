@@ -39,14 +39,12 @@ export default function Dashboard() {
 
     return () => {
       mounted = false;
-      // guard in case subscription object shape changes
       if (sub?.subscription?.unsubscribe) sub.subscription.unsubscribe();
     };
   }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
-    // optional: reload to clear any app state
     window.location.href = "/";
   };
 
@@ -88,7 +86,6 @@ export default function Dashboard() {
   }
 
   if (!session) {
-    // App routes should have gated this, but just in case
     return (
       <main style={{ padding: 24 }}>
         <h2>Not signed in</h2>
@@ -103,6 +100,11 @@ export default function Dashboard() {
       <p style={{ marginTop: 8 }}>
         Signed in as: <strong>{email}</strong>
       </p>
+
+      {/* tiny debug readout to confirm API base at runtime */}
+      <div style={{ marginTop: 4, fontSize: 12, color: "#666" }}>
+        API: <code>{import.meta.env.VITE_API_BASE || "(missing VITE_API_BASE)"}</code>
+      </div>
 
       <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
         <button onClick={handleSignOut}>Sign out</button>
