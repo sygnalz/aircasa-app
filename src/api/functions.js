@@ -1,24 +1,106 @@
 // src/api/functions.js
-// De-Base44 shim: keep the same named exports so imports don’t break.
-// TODO: Implement each function against your Render API (VITE_API_URL) or Supabase.
+// Base44 → AirCasa transition layer.
+// - Implements `properties.list()` against our Express API.
+// - Leaves other exports as no-op/placeholders so existing imports don’t break.
+//   We’ll replace them one-by-one in tiny steps.
 
-const notImplemented = (name) => {
-  throw new Error(`[AirCasa] Function "${name}" is not implemented yet (Base44 removed).`);
+import { supabase } from '@/lib/supabaseClient';
+
+const BASE_URL = import.meta.env.VITE_API_URL || '';
+
+async function authedGet(path) {
+  if (!BASE_URL) throw new Error('VITE_API_URL is not set');
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error('No session token');
+
+  const url = `${BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`API ${res.status}: ${text || res.statusText}`);
+  }
+  return res.json();
+}
+
+// ---- Properties ----
+export const properties = {
+  /**
+   * Mirrors prior usage patterns:
+   *   const { items } = await properties.list();
+   */
+  async list() {
+    // GET https://aircasa-api.onrender.com/properties
+    return authedGet('/properties'); // returns { ok: true, items: [...] }
+  },
 };
 
-export const properties = async (...args) => notImplemented('properties');
-export const aiChat = async (...args) => notImplemented('aiChat');
-export const getVoices = async (...args) => notImplemented('getVoices');
-export const checkConversationHistory = async (...args) => notImplemented('checkConversationHistory');
-export const exportConversationLog = async (...args) => notImplemented('exportConversationLog');
-export const getUserReferralId = async (...args) => notImplemented('getUserReferralId');
-export const syncWithAttom = async (...args) => notImplemented('syncWithAttom');
-export const syncUserWithAirtable = async (...args) => notImplemented('syncUserWithAirtable');
-export const getAdminDashboardStats = async (...args) => notImplemented('getAdminDashboardStats');
-export const getIntakeForPropertyAdmin = async (...args) => notImplemented('getIntakeForPropertyAdmin');
-export const getConversationUserSummaries = async (...args) => notImplemented('getConversationUserSummaries');
-export const getUserConversationDetails = async (...args) => notImplemented('getUserConversationDetails');
-export const sendAdminMessage = async (...args) => notImplemented('sendAdminMessage');
-export const getUserChatHistory = async (...args) => notImplemented('getUserChatHistory');
-export const getAnalyticsData = async (...args) => notImplemented('getAnalyticsData');
-export const generateSpeech = async (...args) => notImplemented('generateSpeech');
+// ---- Placeholders (to be migrated next) ----
+// Tip: we’ll replace each with real API calls in subsequent steps.
+export const aiChat = {
+  async send(_payload) {
+    throw new Error('aiChat.send not implemented yet');
+  },
+};
+
+export const getVoices = async () => {
+  throw new Error('getVoices not implemented yet');
+};
+
+export const checkConversationHistory = async () => {
+  throw new Error('checkConversationHistory not implemented yet');
+};
+
+export const exportConversationLog = async () => {
+  throw new Error('exportConversationLog not implemented yet');
+};
+
+export const getUserReferralId = async () => {
+  throw new Error('getUserReferralId not implemented yet');
+};
+
+export const syncWithAttom = async () => {
+  throw new Error('syncWithAttom not implemented yet');
+};
+
+export const syncUserWithAirtable = async () => {
+  throw new Error('syncUserWithAirtable not implemented yet');
+};
+
+export const getAdminDashboardStats = async () => {
+  throw new Error('getAdminDashboardStats not implemented yet');
+};
+
+export const getIntakeForPropertyAdmin = async () => {
+  throw new Error('getIntakeForPropertyAdmin not implemented yet');
+};
+
+export const getConversationUserSummaries = async () => {
+  throw new Error('getConversationUserSummaries not implemented yet');
+};
+
+export const getUserConversationDetails = async () => {
+  throw new Error('getUserConversationDetails not implemented yet');
+};
+
+export const sendAdminMessage = async () => {
+  throw new Error('sendAdminMessage not implemented yet');
+};
+
+export const getUserChatHistory = async () => {
+  throw new Error('getUserChatHistory not implemented yet');
+};
+
+export const getAnalyticsData = async () => {
+  throw new Error('getAnalyticsData not implemented yet');
+};
+
+export const generateSpeech = async () => {
+  throw new Error('generateSpeech not implemented yet');
+};
