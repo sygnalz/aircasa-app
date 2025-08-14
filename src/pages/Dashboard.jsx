@@ -81,6 +81,20 @@ export default function Dashboard() {
     }
   };
 
+  // NEW: Show Token (debug)
+  const handleShowToken = async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const tok = data?.session?.access_token || null;
+      console.log("ACCESS_TOKEN:", tok);
+      alert(tok ? "Token printed to console" : "No token found (are you signed in?)");
+    } catch (e) {
+      const msg = e?.message || String(e);
+      console.error("Show Token error:", msg);
+      alert(msg);
+    }
+  };
+
   if (loading) {
     return <div style={{ padding: 24 }}>Loading your dashboard…</div>;
   }
@@ -106,12 +120,14 @@ export default function Dashboard() {
         API: <code>{import.meta.env.VITE_API_BASE || "(missing VITE_API_BASE)"}</code>
       </div>
 
-      <div style={{ display: "flex", gap: 12, marginTop: 16 }}>
+      <div style={{ display: "flex", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
         <button onClick={handleSignOut}>Sign out</button>
         <button onClick={handleCallApi}>Call Secure API</button>
         <button onClick={handleLoadProperties} disabled={propsLoading}>
           {propsLoading ? "Loading properties…" : "Load Properties"}
         </button>
+        {/* New debug helper */}
+        <button onClick={handleShowToken}>Show Token (debug)</button>
       </div>
 
       {/* /secure tester output */}
