@@ -7,7 +7,7 @@ import { Textarea } from '../ui/textarea';
 import { AlertCircle, CheckCircle, Loader2, Database, Settings, Download, Eye, EyeOff } from 'lucide-react';
 import { Alert, AlertDescription } from '../ui/alert';
 import { AirtableAnalyzer } from '../../lib/airtableAnalyzer';
-import { ClientEnvUpdater } from '../../utils/envUpdater';
+import { ClientEnvUpdater } from '../../utils/clientEnvUpdater';
 
 export default function AirtableSetup() {
   const [step, setStep] = useState(1);
@@ -100,19 +100,15 @@ export default function AirtableSetup() {
 
   // Step 5: Download Configuration
   const downloadConfig = useCallback(() => {
-    const blob = new Blob([generatedConfig], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'airtable-config.env';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    ClientEnvUpdater.downloadConfiguration(generatedConfig, 'airtable-config.env');
   }, [generatedConfig]);
 
-  const copyToClipboard = useCallback(() => {
-    navigator.clipboard.writeText(generatedConfig);
+  const copyToClipboard = useCallback(async () => {
+    const success = await ClientEnvUpdater.copyToClipboard(generatedConfig);
+    if (success) {
+      // Could show a toast notification here
+      console.log('Configuration copied to clipboard!');
+    }
   }, [generatedConfig]);
 
   return (
