@@ -179,40 +179,66 @@ export function transformPropertyForAirtable(appProperty) {
   console.log('🔄 Transforming property data for Airtable:', JSON.stringify(appProperty, null, 2));
   
   const transformed = {
-    // Start with core fields that are confirmed to work
+    // Core property fields (confirmed to exist in Airtable schema)
+    app_address: appProperty.address,
+    app_street: appProperty.street,
     app_city: appProperty.city,
     app_state: appProperty.state,
+    app_zip_code: appProperty.zip_code,
+    app_property_type: appProperty.property_type,
     app_bedrooms: appProperty.bedrooms,
     app_bathrooms: appProperty.bathrooms,
+    app_estimated_value: appProperty.estimated_value,
+    app_image_url: appProperty.image_url,
     
-    // Add essential fields one by one
-    app_address: appProperty.address,
-    app_zip_code: appProperty.zip_code, // Using app_zip_code as user confirmed
-    app_property_type: appProperty.property_type,
-    app_square_feet: appProperty.square_feet,
-    app_price: appProperty.estimated_value,
+    // User information fields (confirmed to exist)
+    app_owner_user_id: appProperty.app_owner_user_id,
+    app_first_name: appProperty.first_name || '',
+    app_last_name: appProperty.last_name || '',
     app_email: appProperty.email,
+    app_phone: appProperty.phone || '',
+    app_is_buying_home: appProperty.is_buying_home || false,
+    app_referred_by: appProperty.referred_by || '',
     
-    // Additional enriched fields from Zillow + ATTOM APIs (only if they exist in schema)
-    ...(appProperty.year_built && { app_year_built: appProperty.year_built }),
-    ...(appProperty.lot_size && { app_lot_size: appProperty.lot_size }),
-    ...(appProperty.zillow_zpid && { app_zillow_zpid: appProperty.zillow_zpid }),
-    ...(appProperty.attom_id && { app_attom_id: appProperty.attom_id }),
-    ...(appProperty.image_url && { app_images: appProperty.image_url }),
+    // ATTOM Data fields (confirmed to exist in schema)
+    attom_id: appProperty.attom_id,
     
-    // Optional fields that might not exist in schema
-    ...(appProperty.mls_verified !== undefined && { app_mls_verified: appProperty.mls_verified }),
-    ...(appProperty.school_district && { app_school_district: appProperty.school_district }),
-    ...(appProperty.tax_amount && { app_tax_amount: appProperty.tax_amount }),
-    ...(appProperty.assessed_value && { app_assessed_value: appProperty.assessed_value }),
-    ...(appProperty.parcel_number && { app_parcel_number: appProperty.parcel_number }),
-    
-    // User information (if fields exist)
-    ...(appProperty.first_name && { app_first_name: appProperty.first_name }),
-    ...(appProperty.last_name && { app_last_name: appProperty.last_name }),
-    ...(appProperty.phone && { app_phone: appProperty.phone }),
-    ...(appProperty.referred_by && { app_referred_by: appProperty.referred_by }),
-    ...(appProperty.is_buying_home !== undefined && { app_is_buying_home: appProperty.is_buying_home })
+    // Additional ATTOM fields that will be populated by ATTOM API
+    // These fields exist in your Airtable schema but may not be in current enrichedPropertyData
+    // We'll populate them conditionally if available
+    ...(appProperty.attom_street_address && { attom_sell_property_address_street: appProperty.attom_street_address }),
+    ...(appProperty.attom_city && { attom_sell_property_address_city: appProperty.attom_city }),
+    ...(appProperty.attom_state && { attom_sell_property_address_state: appProperty.attom_state }),
+    ...(appProperty.attom_zip && { attom_sell_property_address_zip: appProperty.attom_zip }),
+    ...(appProperty.attom_country && { attom_sell_property_address_country: appProperty.attom_country }),
+    ...(appProperty.attom_subdivision && { attom_sell_property_subdvision_name: appProperty.attom_subdivision }),
+    ...(appProperty.attom_municipality && { attom_sell_property_municipality_name: appProperty.attom_municipality }),
+    ...(appProperty.attom_county && { attom_sell_property_county: appProperty.attom_county }),
+    ...(appProperty.attom_use_type && { attom_sell_property_use_type: appProperty.attom_use_type }),
+    ...(appProperty.attom_year_built && { attom_sell_property_year_built: appProperty.attom_year_built }),
+    ...(appProperty.attom_levels && { attom_sell_property_levels: appProperty.attom_levels }),
+    ...(appProperty.attom_finished_sf && { attom_sell_property_finished_sf: appProperty.attom_finished_sf }),
+    ...(appProperty.attom_siding && { attom_sell_property_siding: appProperty.attom_siding }),
+    ...(appProperty.attom_roof_type && { attom_sell_property_roof_type: appProperty.attom_roof_type }),
+    ...(appProperty.attom_central_air && { attom_sell_property_central_air: appProperty.attom_central_air }),
+    ...(appProperty.attom_heating_type && { attom_sell_property_heating_type: appProperty.attom_heating_type }),
+    ...(appProperty.attom_heating_fuel && { attom_sell_property_heating_fuel_type: appProperty.attom_heating_fuel }),
+    ...(appProperty.attom_fireplace_number && { attom_sell_property_fireplace_number: appProperty.attom_fireplace_number }),
+    ...(appProperty.attom_lot_size && { attom_sell_property_lot_size: appProperty.attom_lot_size }),
+    ...(appProperty.attom_lot_zoning && { attom_sell_property_lot_zoning: appProperty.attom_lot_zoning }),
+    ...(appProperty.attom_mortgage_amount && { attom_sell_property_mortgage_amount: appProperty.attom_mortgage_amount }),
+    ...(appProperty.attom_2nd_mortgage && { attom_sell_property_2nd_mortgage_amount: appProperty.attom_2nd_mortgage }),
+    ...(appProperty.attom_pool_type && { attom_sell_property_pool_type: appProperty.attom_pool_type }),
+    ...(appProperty.attom_flooring && { attom_sell_property_flooring_types: appProperty.attom_flooring }),
+    ...(appProperty.attom_taxes && { attom_sell_property_taxes: appProperty.attom_taxes }),
+    ...(appProperty.attom_legal_desc1 && { attom_property_legal_description1: appProperty.attom_legal_desc1 }),
+    ...(appProperty.attom_legal_desc2 && { attom_property_legal_description2: appProperty.attom_legal_desc2 }),
+    ...(appProperty.attom_legal_desc3 && { attom_property_legal_description3: appProperty.attom_legal_desc3 }),
+    ...(appProperty.attom_tax_id && { attom_property_tax_id: appProperty.attom_tax_id }),
+    ...(appProperty.attom_school_district && { attom_sell_property_school_district: appProperty.attom_school_district }),
+    ...(appProperty.attom_elementary_school && { attom_sell_property_school_district_elementary: appProperty.attom_elementary_school }),
+    ...(appProperty.attom_middle_school && { attom_sell_property_school_district_middle: appProperty.attom_middle_school }),
+    ...(appProperty.attom_high_school && { attom_sell_property_school_district_high: appProperty.attom_high_school })
   };
   
   console.log('✅ Transformed property data (without Name field):', JSON.stringify(transformed, null, 2));

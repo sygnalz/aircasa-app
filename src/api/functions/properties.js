@@ -234,7 +234,7 @@ export const properties = async ({ operation, payload }) => {
       phone: payload.phone,
       referred_by: payload.referred_by || null,
       
-      // Additional ATTOM data
+      // Additional ATTOM data for school information
       school_district: get(attomSchools, 'property.0.school.district.name'),
       elementary_school: get(attomSchools, 'property.0.school.elementary.name'),
       middle_school: get(attomSchools, 'property.0.school.middle.name'),
@@ -248,6 +248,41 @@ export const properties = async ({ operation, payload }) => {
       // Additional property details
       parcel_number: get(attomExpandedProfile, 'property.0.lot.apn'),
       legal_description: get(attomAssessment, 'assessment.0.legal.legal1'),
+      
+      // Comprehensive ATTOM data mapping to Airtable schema
+      attom_street_address: get(attomExpandedProfile, 'property.0.address.line1'),
+      attom_city: get(attomExpandedProfile, 'property.0.address.locality'),
+      attom_state: get(attomExpandedProfile, 'property.0.address.countrySubd'),
+      attom_zip: get(attomExpandedProfile, 'property.0.address.postal1'),
+      attom_country: get(attomExpandedProfile, 'property.0.address.country', 'US'),
+      attom_subdivision: get(attomExpandedProfile, 'property.0.area.subdname'),
+      attom_municipality: get(attomExpandedProfile, 'property.0.area.munname'),
+      attom_county: get(attomExpandedProfile, 'property.0.area.countyname'),
+      attom_use_type: get(attomExpandedProfile, 'property.0.summary.propclass'),
+      attom_year_built: get(attomExpandedProfile, 'property.0.summary.yearbuilt'),
+      attom_levels: get(attomExpandedProfile, 'property.0.building.rooms.storeytype'),
+      attom_finished_sf: get(attomExpandedProfile, 'property.0.building.size.bldgsize'),
+      attom_siding: get(attomExpandedProfile, 'property.0.building.exterior.walltype'),
+      attom_roof_type: get(attomExpandedProfile, 'property.0.building.construction.rooftype'),
+      attom_central_air: get(attomExpandedProfile, 'property.0.utilities.coolingtype'),
+      attom_heating_type: get(attomExpandedProfile, 'property.0.utilities.heatingtype'),
+      attom_heating_fuel: get(attomExpandedProfile, 'property.0.utilities.heatingfuel'),
+      attom_fireplace_number: get(attomExpandedProfile, 'property.0.building.interior.fplccount'),
+      attom_lot_size: get(attomExpandedProfile, 'property.0.lot.lotsize1'),
+      attom_lot_zoning: get(attomExpandedProfile, 'property.0.summary.zoning'),
+      attom_mortgage_amount: get(attomAssessment, 'assessment.0.deed.amount'),
+      attom_2nd_mortgage: get(attomAssessment, 'assessment.0.deed.amount2'),
+      attom_pool_type: get(attomExpandedProfile, 'property.0.building.pool.pooltype'),
+      attom_flooring: get(attomExpandedProfile, 'property.0.building.interior.floortype'),
+      attom_taxes: get(attomAssessment, 'assessment.0.tax.taxtot'),
+      attom_legal_desc1: get(attomAssessment, 'assessment.0.legal.legal1'),
+      attom_legal_desc2: get(attomAssessment, 'assessment.0.legal.legal2'),
+      attom_legal_desc3: get(attomAssessment, 'assessment.0.legal.legal3'),
+      attom_tax_id: get(attomExpandedProfile, 'property.0.lot.apn'),
+      attom_school_district: get(attomSchools, 'property.0.school.district.name'),
+      attom_elementary_school: get(attomSchools, 'property.0.school.elementary.name'),
+      attom_middle_school: get(attomSchools, 'property.0.school.middle.name'),
+      attom_high_school: get(attomSchools, 'property.0.school.high.name'),
     };
 
     console.log('📊 Enriched property data:', JSON.stringify(enrichedPropertyData, null, 2));
