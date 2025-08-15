@@ -4,7 +4,7 @@ import { userSpecificAPI } from '../api/userSpecificFunctions';
 import { useAuth } from '../contexts/AuthContext';
 import { debugUserProperties } from '../utils/debugProperties';
 import { testAirtableConnection } from '../utils/testAirtable';
-import AuthDebug from '../components/debug/AuthDebug';
+// import AuthDebug from '../components/debug/AuthDebug'; // Removed for production
 import PropertyCard from '@/components/properties/PropertyCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -135,69 +135,72 @@ export default function PropertiesPage() {
     setError(null);
     setLoading(true);
     try {
-      console.log(`🔄 Loading properties for user: ${user.email}...`);
+      console.log(`🔄 Loading properties for user: ${user.email} (ID: ${user.id})`);
       
-      // Use user-specific API to get only this user's properties
-      const userProperties = await userSpecificAPI.getUserProperties(user.email, user.id);
+      // First, let's test direct Airtable connection
+      console.log('🧪 Testing Airtable connection...');
+      const airtableTest = await testAirtableConnection();
+      console.log('🧪 Airtable test result:', airtableTest);
       
-      if (Array.isArray(userProperties)) {
-        console.log(`✅ Loaded ${userProperties.length} user-specific properties`);
-        setItems(userProperties);
-      } else {
-        console.log('⚠️ No user properties data received');
-        setItems([]);
-      }
-    } catch (err) {
-      console.error('❌ Error loading user properties:', err.message);
-      setError(`Failed to load properties: ${err.message}`);
+      // Try to get all properties first to see what's available
+      console.log('🔄 Loading all properties to inspect data...');
+      const allPropertiesData = await properties.list();
+      console.log('📊 All properties response:', allPropertiesData);
       
-      // Fallback: try to load all properties and filter client-side
-      try {
-        console.log('🔄 Trying fallback method...');
+      if (allPropertiesData?.items && Array.isArray(allPropertiesData.items)) {
+        console.log(`📄 Found ${allPropertiesData.items.length} total properties in system`);
         
-        // Debug: Check what's actually in the Properties table
-        console.log('🧪 Testing direct Airtable connection...');
-        const airtableTest = await testAirtableConnection();
-        
-        console.log('🔍 Running debug for user properties...');
-        await debugUserProperties(user.email);
-        
-        const data = await properties.list();
-        if (data?.items && Array.isArray(data.items)) {
-          // Filter properties for current user
-          const filteredProperties = data.items.filter(property => {
-            console.log('🔍 Filtering property:', {
-              id: property.id,
-              title: property.title,
-              ownerEmail: property.ownerEmail,
-              app_email: property.app_email,
-              app_owner_user_id: property.app_owner_user_id,
-              userEmail: user.email,
-              userId: user.id
-            });
-            
-            const matches = (
-              property.ownerEmail === user.email ||
-              property.app_email === user.email ||
-              property.app_owner_user_id === user.id
-            );
-            
-            if (matches) {
-              console.log('✅ Property matches user:', property.title);
-            }
-            
-            return matches;
+        // Log first few properties to see structure
+        allPropertiesData.items.slice(0, 3).forEach((prop, index) => {
+          console.log(`🏠 Property ${index + 1} structure:`, {
+            id: prop.id,
+            title: prop.title,
+            ownerEmail: prop.ownerEmail,
+            app_email: prop.app_email,
+            app_owner_user_id: prop.app_owner_user_id,
+            allFields: Object.keys(prop)
           });
-          console.log(`✅ Fallback: Found ${filteredProperties.length} properties for user`);
-          setItems(filteredProperties);
-          setError(null); // Clear error if fallback works
-        } else {
-          setItems([]);
+        });
+        
+        // Filter for current user
+        const userProperties = allPropertiesData.items.filter(property => {
+          const userMatch = (
+            property.ownerEmail === user.email ||
+            property.app_email === user.email ||
+            property.app_owner_user_id === user.id
+          );
+          
+          if (userMatch) {
+            console.log('✅ Found matching property:', {
+              title: property.title,
+              matchedBy: property.ownerEmail === user.email ? 'ownerEmail' : 
+                        property.app_email === user.email ? 'app_email' : 'app_owner_user_id'
+            });
+          }
+          
+          return userMatch;
+        });
+        
+        console.log(`🎯 Found ${userProperties.length} properties for user ${user.email}`);
+        setItems(userProperties);
+        
+        if (userProperties.length === 0) {
+          console.log('🔍 No user-specific properties found. Checking for any email matches...');
+          const emailMatches = allPropertiesData.items.filter(prop => 
+            JSON.stringify(prop).toLowerCase().includes(user.email.toLowerCase())
+          );
+          console.log(`📧 Properties containing user email: ${emailMatches.length}`);
         }
-      } catch (fallbackErr) {
-        console.error('❌ Fallback also failed:', fallbackErr.message);
+      } else {
+        console.log('⚠️ No properties data received or invalid format');
         setItems([]);
+        setError('No properties data available');
       }
+      
+    } catch (err) {
+      console.error('❌ Error loading properties:', err);
+      setError(`Failed to load properties: ${err.message}`);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -273,9 +276,6 @@ export default function PropertiesPage() {
 
   return (
     <div className="space-y-8">
-      {/* Debug Info */}
-      <AuthDebug />
-      
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
@@ -410,6 +410,23 @@ export default function PropertiesPage() {
           </div>
         </div>
       </div>
+
+      {/* Debug Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">🔍 Loading Debug Info</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2 text-sm">
+            <p><strong>User Email:</strong> {user?.email || 'Not available'}</p>
+            <p><strong>User ID:</strong> {user?.id || 'Not available'}</p>
+            <p><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</p>
+            <p><strong>Items Count:</strong> {items.length}</p>
+            <p><strong>Error:</strong> {error || 'None'}</p>
+            <p><strong>Authentication:</strong> {isAuthenticated ? 'Yes' : 'No'}</p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Results */}
       {error && (
