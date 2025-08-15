@@ -1,12 +1,12 @@
-// aircasa-app/src/App.jsx
-import { Routes, Route, Outlet } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "./lib/supabaseClient";
+import { Routes, Route, Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { supabase } from './lib/supabaseClient';
+import { AppLayout } from '@/components/layout/AppLayout';
 
-import Auth from "@/pages/Auth.jsx";
-import Home from "@/pages/index.jsx";
-import Dashboard from "@/pages/Dashboard.jsx";
-import Properties from "@/pages/Properties.jsx";
+import Auth from '@/pages/Auth.jsx';
+import Home from '@/pages/index.jsx';
+import Dashboard from '@/pages/Dashboard.jsx';
+import Properties from '@/pages/Properties.jsx';
 
 function AuthGate({ children }) {
   const [loading, setLoading] = useState(true);
@@ -60,9 +60,35 @@ function AuthGate({ children }) {
 }
 
 function ProtectedShell() {
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <AuthGate>
-      <Outlet />
+      <AppLayout user={session?.user}>
+        <Outlet />
+      </AppLayout>
     </AuthGate>
   );
 }
