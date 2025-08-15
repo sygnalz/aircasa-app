@@ -42,64 +42,9 @@ const extractSchoolByGrade = (schools, gradeLevel) => {
   return school?.InstitutionName || null;
 };
 
-// Helper function to extract schools by grade level as per PDF documentation
-const extractSchoolByGrade = (schools, gradeLevel) => {
-  if (!schools || !Array.isArray(schools)) return null;
-  
-  for (const school of schools) {
-    const grades = school.gradeLevel || '';
-    const gradeLower = grades.toLowerCase();
-    
-    if (gradeLevel === 'elementary') {
-      // Elementary: PK, KG, K, 1-5
-      if (gradeLower.includes('pk') || gradeLower.includes('kg') || 
-          gradeLower.includes('k-') || gradeLower.includes('1-') ||
-          gradeLower.includes('2-') || gradeLower.includes('3-') ||
-          gradeLower.includes('4-') || gradeLower.includes('5-') ||
-          gradeLower.includes('-5')) {
-        return school.name;
-      }
-    } else if (gradeLevel === 'middle') {
-      // Middle: 6-8
-      if (gradeLower.includes('6-') || gradeLower.includes('7-') || 
-          gradeLower.includes('8-') || gradeLower.includes('-8')) {
-        return school.name;
-      }
-    } else if (gradeLevel === 'high') {
-      // High: 9-12
-      if (gradeLower.includes('9-') || gradeLower.includes('10-') || 
-          gradeLower.includes('11-') || gradeLower.includes('12-') ||
-          gradeLower.includes('-12')) {
-        return school.name;
-      }
-    }
-  }
-  
-  return null;
-};
 
-// Process school data from /property/detailwithschools endpoint
-const extractSchoolData = (attomSchools) => {
-  if (!attomSchools || !attomSchools.property || !attomSchools.property[0]) {
-    return {
-      district: null,
-      elementary: null,
-      middle: null,
-      high: null
-    };
-  }
-  
-  const property = attomSchools.property[0];
-  const district = get(property, 'schoolDistrict.0.districtname', null);
-  const schools = get(property, 'schools', []);
-  
-  return {
-    district,
-    elementary: extractSchoolByGrade(schools, 'elementary'),
-    middle: extractSchoolByGrade(schools, 'middle'),
-    high: extractSchoolByGrade(schools, 'high')
-  };
-};
+
+
 
 // Zillow API backend calls (moved from frontend for security)
 const callZillowAPI = async (endpoint, params) => {
@@ -321,16 +266,11 @@ export const properties = async ({ operation, payload }) => {
       phone: payload.phone,
       referred_by: payload.referred_by || null,
       
-      // Process school data using helper function as per PDF documentation
-      ...((() => {
-        const schoolData = extractSchoolData(attomSchools);
-        return {
-          school_district: schoolData.district,
-          elementary_school: schoolData.elementary,
-          middle_school: schoolData.middle,
-          high_school: schoolData.high
-        };
-      })()),
+      // School data using PDF protocol field paths
+      school_district: get(attomSchools, 'property.0.schoolDistrict.0.districtname'),
+      elementary_school: extractSchoolByGrade(get(attomSchools, 'property.0.school'), 'elementary'),
+      middle_school: extractSchoolByGrade(get(attomSchools, 'property.0.school'), 'middle'),
+      high_school: extractSchoolByGrade(get(attomSchools, 'property.0.school'), 'high'),
       
       // Tax and legal data from ATTOM
       tax_amount: get(attomAssessment, 'assessment.0.tax.taxtot'),
