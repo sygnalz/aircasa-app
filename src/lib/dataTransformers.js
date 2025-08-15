@@ -200,12 +200,10 @@ export function transformPropertyForAirtable(appProperty) {
     app_is_buying_home: appProperty.is_buying_home || false,
     app_referred_by: appProperty.referred_by || '',
     
-    // ATTOM Data fields (confirmed to exist in schema)
-    attom_id: appProperty.attom_id,
+    // ATTOM Data fields - Core ATTOM ID (always include if available)
+    ...(appProperty.attom_id && { attom_id: appProperty.attom_id }),
     
-    // Additional ATTOM fields that will be populated by ATTOM API
-    // These fields exist in your Airtable schema but may not be in current enrichedPropertyData
-    // We'll populate them conditionally if available
+    // ATTOM Address fields from expandedprofile endpoint (following PDF protocol)
     ...(appProperty.attom_street_address && { attom_sell_property_address_street: appProperty.attom_street_address }),
     ...(appProperty.attom_city && { attom_sell_property_address_city: appProperty.attom_city }),
     ...(appProperty.attom_state && { attom_sell_property_address_state: appProperty.attom_state }),
@@ -214,27 +212,40 @@ export function transformPropertyForAirtable(appProperty) {
     ...(appProperty.attom_subdivision && { attom_sell_property_subdvision_name: appProperty.attom_subdivision }),
     ...(appProperty.attom_municipality && { attom_sell_property_municipality_name: appProperty.attom_municipality }),
     ...(appProperty.attom_county && { attom_sell_property_county: appProperty.attom_county }),
+    
+    // ATTOM Property characteristics from expandedprofile
     ...(appProperty.attom_use_type && { attom_sell_property_use_type: appProperty.attom_use_type }),
-    ...(appProperty.attom_year_built && { attom_sell_property_year_built: appProperty.attom_year_built }),
-    ...(appProperty.attom_levels && { attom_sell_property_levels: appProperty.attom_levels }),
-    ...(appProperty.attom_finished_sf && { attom_sell_property_finished_sf: appProperty.attom_finished_sf }),
+    ...(appProperty.attom_year_built && { attom_sell_property_year_built: Number(appProperty.attom_year_built) }),
+    ...(appProperty.attom_levels && { attom_sell_property_levels: Number(appProperty.attom_levels) }),
+    ...(appProperty.attom_finished_sf && { attom_sell_property_finished_sf: Number(appProperty.attom_finished_sf) }),
     ...(appProperty.attom_siding && { attom_sell_property_siding: appProperty.attom_siding }),
     ...(appProperty.attom_roof_type && { attom_sell_property_roof_type: appProperty.attom_roof_type }),
     ...(appProperty.attom_central_air && { attom_sell_property_central_air: appProperty.attom_central_air }),
     ...(appProperty.attom_heating_type && { attom_sell_property_heating_type: appProperty.attom_heating_type }),
     ...(appProperty.attom_heating_fuel && { attom_sell_property_heating_fuel_type: appProperty.attom_heating_fuel }),
-    ...(appProperty.attom_fireplace_number && { attom_sell_property_fireplace_number: appProperty.attom_fireplace_number }),
-    ...(appProperty.attom_lot_size && { attom_sell_property_lot_size: appProperty.attom_lot_size }),
+    ...(appProperty.attom_fireplace_number && { attom_sell_property_fireplace_number: Number(appProperty.attom_fireplace_number) }),
+    ...(appProperty.attom_lot_size && { attom_sell_property_lot_size: Number(appProperty.attom_lot_size) }),
     ...(appProperty.attom_lot_zoning && { attom_sell_property_lot_zoning: appProperty.attom_lot_zoning }),
-    ...(appProperty.attom_mortgage_amount && { attom_sell_property_mortgage_amount: appProperty.attom_mortgage_amount }),
-    ...(appProperty.attom_2nd_mortgage && { attom_sell_property_2nd_mortgage_amount: appProperty.attom_2nd_mortgage }),
+    ...(appProperty.attom_mortgage_amount && { attom_sell_property_mortgage_amount: Number(appProperty.attom_mortgage_amount) }),
+    ...(appProperty.attom_2nd_mortgage && { attom_sell_property_2nd_mortgage_amount: Number(appProperty.attom_2nd_mortgage) }),
+    
+    // ATTOM Fields from assessment/detail endpoint
+    ...(appProperty.attom_architectural_style && { attom_sell_property_architectural_style: appProperty.attom_architectural_style }),
+    ...(appProperty.attom_water_source && { attom_sell_property_water_source: appProperty.attom_water_source }),
+    ...(appProperty.attom_sewer_type && { attom_sell_property_sewer_type: appProperty.attom_sewer_type }),
     ...(appProperty.attom_pool_type && { attom_sell_property_pool_type: appProperty.attom_pool_type }),
+    ...(appProperty.attom_garage && { attom_sell_property_garage: appProperty.attom_garage }),
     ...(appProperty.attom_flooring && { attom_sell_property_flooring_types: appProperty.attom_flooring }),
-    ...(appProperty.attom_taxes && { attom_sell_property_taxes: appProperty.attom_taxes }),
+    ...(appProperty.attom_taxes && { attom_sell_property_taxes: Number(appProperty.attom_taxes) }),
+    ...(appProperty.attom_designated_historic && { attom_sell_property_designated_historic: appProperty.attom_designated_historic }),
+    
+    // ATTOM Legal and tax fields
     ...(appProperty.attom_legal_desc1 && { attom_property_legal_description1: appProperty.attom_legal_desc1 }),
     ...(appProperty.attom_legal_desc2 && { attom_property_legal_description2: appProperty.attom_legal_desc2 }),
     ...(appProperty.attom_legal_desc3 && { attom_property_legal_description3: appProperty.attom_legal_desc3 }),
     ...(appProperty.attom_tax_id && { attom_property_tax_id: appProperty.attom_tax_id }),
+    
+    // ATTOM School data from detailwithschools endpoint  
     ...(appProperty.attom_school_district && { attom_sell_property_school_district: appProperty.attom_school_district }),
     ...(appProperty.attom_elementary_school && { attom_sell_property_school_district_elementary: appProperty.attom_elementary_school }),
     ...(appProperty.attom_middle_school && { attom_sell_property_school_district_middle: appProperty.attom_middle_school }),

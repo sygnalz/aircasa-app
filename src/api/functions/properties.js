@@ -15,6 +15,33 @@ const get = (obj, path, defaultValue = null) => {
   return result === undefined || result === null ? defaultValue : result;
 };
 
+// Helper to correctly parse school grade levels from ATTOM response (from PDF protocol)
+const extractSchoolByGrade = (schools, gradeLevel) => {
+  if (!schools || !Array.isArray(schools)) return null;
+
+  const elementaryGrades = ["PK", "KG", "1", "2", "3", "4", "5"];
+  const middleGrades = ["6", "7", "8"];
+  const highGrades = ["9", "10", "11", "12"];
+
+  const school = schools.find(s => {
+    const lowGrade = (s.gradelevel1lotext || '').trim().toUpperCase();
+    const highGrade = (s.gradelevel1hitext || '').trim().toUpperCase();
+    
+    switch (gradeLevel) {
+      case 'elementary':
+        return elementaryGrades.includes(lowGrade) || elementaryGrades.includes(highGrade);
+      case 'middle':
+        return middleGrades.includes(lowGrade) || middleGrades.includes(highGrade);
+      case 'high':
+        return highGrades.includes(lowGrade) || highGrades.includes(highGrade);
+      default:
+        return false;
+    }
+  });
+
+  return school?.InstitutionName || null;
+};
+
 // Helper function to extract schools by grade level as per PDF documentation
 const extractSchoolByGrade = (schools, gradeLevel) => {
   if (!schools || !Array.isArray(schools)) return null;
@@ -140,7 +167,7 @@ const callAttomAPI = async (endpoint, params) => {
   let url;
   if (endpoint === 'expandedprofile') {
     url = `${baseUrl}/property/expandedprofile?address=${encodeURIComponent(params.address)}`;
-  } else if (endpoint === 'assessment') {
+  } else if (endpoint === 'assessment' || endpoint === 'assessment/detail') {
     url = `${baseUrl}/assessment/detail?address=${encodeURIComponent(params.address)}`;
   } else if (endpoint === 'detailwithschools') {
     url = `${baseUrl}/property/detailwithschools?attomId=${params.attomId}`;
@@ -239,12 +266,12 @@ export const properties = async ({ operation, payload }) => {
     }
 
     try {
-      // Get assessment data - using correct endpoint path  
-      attomAssessment = await callAttomAPI('assessment', { 
+      // Get assessment data - using correct endpoint path from PDF protocol
+      attomAssessment = await callAttomAPI('assessment/detail', { 
         address: payload.address 
       });
     } catch (error) {
-      console.warn('⚠️ ATTOM assessment failed:', error.message);
+      console.warn('⚠️ ATTOM assessment/detail failed:', error.message);
     }
 
     if (attomId) {
@@ -353,16 +380,11 @@ export const properties = async ({ operation, payload }) => {
       attom_legal_desc2: get(attomAssessment, 'assessment.0.summary.legal2'),
       attom_legal_desc3: get(attomAssessment, 'assessment.0.summary.legal3'),
       
-      // School data processed with custom extraction logic as per PDF
-      ...((() => {
-        const schoolData = extractSchoolData(attomSchools);
-        return {
-          attom_school_district: schoolData.district,
-          attom_elementary_school: schoolData.elementary,
-          attom_middle_school: schoolData.middle,
-          attom_high_school: schoolData.high
-        };
-      })()),
+      // School data processed with extractSchoolByGrade helper as per PDF protocol
+      attom_school_district: get(attomSchools, 'property.0.schoolDistrict.0.districtname'),
+      attom_elementary_school: extractSchoolByGrade(get(attomSchools, 'property.0.school'), 'elementary'),
+      attom_middle_school: extractSchoolByGrade(get(attomSchools, 'property.0.school'), 'middle'),
+      attom_high_school: extractSchoolByGrade(get(attomSchools, 'property.0.school'), 'high')
     };
 
     console.log('📊 Enriched property data:', JSON.stringify(enrichedPropertyData, null, 2));
