@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Signup } from "@/api/entities";
 import { User } from "@/api/entities";
-import { SendEmail } from "@/api/integrations";
+import { Core } from "@/api/integrations";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { properties as propertiesFunction } from "@/api/functions/properties.js";
@@ -139,7 +139,7 @@ export default function OnboardingPage() {
         property_id: propertyRecord.data.id
       });
 
-      await SendEmail({
+      await Core.SendEmail({
         to: completeData.email,
         subject: "Welcome to AirCasa - Your Property is Ready!",
         body: `Hello ${completeData.first_name},\n\nWe're excited to help you with your property at ${completeData.property_address}.\n\nYour property has been added to your dashboard. You can complete the setup tasks and choose your plan from there.\n\nBest regards,\nThe AirCasa Team`
