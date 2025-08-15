@@ -188,7 +188,7 @@ export function transformPropertyForAirtable(appProperty) {
     app_city: appProperty.city,
     app_state: appProperty.state,
     app_country: appProperty.country,
-    app_zip: appProperty.zip_code, // Match enrichedPropertyData.zip_code
+    app_zip_code: appProperty.zip_code, // Fixed: should be app_zip_code not app_zip
     app_property_type: appProperty.property_type, // Match enrichedPropertyData.property_type
     app_bedrooms: appProperty.bedrooms,
     app_bathrooms: appProperty.bathrooms,
