@@ -21,8 +21,10 @@ import PlanManagement from "../components/dashboard/PlanManagement";
 import HomeBuyingTasks from "../components/property/HomeBuyingTasks";
 
 export default function UserPropertyWorkspace() {
+  console.log('🏠 UserPropertyWorkspace component loading...');
   const [searchParams] = useSearchParams();
-  const propertyId = searchParams.get("id"); 
+  const propertyId = searchParams.get("id");
+  console.log('🏠 Property ID from URL:', propertyId); 
 
   const [property, setProperty] = useState(null);
   const [propertyIntake, setPropertyIntake] = useState(null);
@@ -54,7 +56,30 @@ export default function UserPropertyWorkspace() {
       }
 
       // Fetch the main property data using the secure backend function
-      const propertyResponse = await propertiesFunction({ operation: 'get', recordId: propertyId });
+      // For demo mode, create a mock property response
+      let propertyResponse;
+      if (propertyId === 'demo-property-123') {
+        console.log('🎬 Demo mode: Creating mock property response');
+        propertyResponse = {
+          status: 200,
+          data: {
+            id: 'demo-property-123',
+            app_street_address: '123 Demo Street',
+            app_city: 'Demo City',
+            app_state: 'CA',
+            app_zip_code: '90210',
+            property_intake_completed: false,
+            photos_completed: false,
+            consultation_completed: false,
+            home_criteria_main_completed: false,
+            personal_financial_completed: false,
+            app_is_buying_home: true,
+            app_property_name: 'Demo Property'
+          }
+        };
+      } else {
+        propertyResponse = await propertiesFunction({ operation: 'get', recordId: propertyId });
+      }
       
       if (propertyResponse.status === 200 && propertyResponse.data) {
         const fetchedProperty = propertyResponse.data;
@@ -139,8 +164,13 @@ export default function UserPropertyWorkspace() {
   };
 
   const openFilloutForm = (formType) => {
+    console.log('🔍 openFilloutForm called with:', formType);
+    console.log('🔍 currentUser:', currentUser);
+    console.log('🔍 propertyId:', propertyId);
+    
     // Add a guard to ensure we have the necessary IDs before generating the URL
     if (!currentUser?.id || !propertyId) {
+        console.error('❌ Missing user or property ID');
         alert("Cannot open form: User or Property information is not available yet. Please wait a moment and try again.");
         return;
     }
@@ -168,9 +198,12 @@ export default function UserPropertyWorkspace() {
         break;
       default:
         // Do not proceed if the form type is unknown
+        console.error('❌ Unknown form type:', formType);
         return;
     }
     
+    console.log('✅ Setting form URL:', url);
+    console.log('✅ Opening modal...');
     setFilloutFormUrl(url);
     setShowFilloutModal(true);
   };

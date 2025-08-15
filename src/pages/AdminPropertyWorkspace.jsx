@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { properties as propertiesFunction } from "@/api/functions/properties.js";
-import { getIntakeForPropertyAdmin } from "@/api/functions/getIntakeForPropertyAdmin.js";
+// import { getIntakeForPropertyAdmin } from "@/api/functions/getIntakeForPropertyAdmin.js"; // File doesn't exist
 import { PropertyIntake } from "@/api/entities";
 import { User } from "@/api/entities"; 
 import { AIInsight } from "@/api/entities"; 
@@ -68,13 +68,13 @@ export default function AdminPropertyWorkspace() {
         const fetchedProperty = propertyResponse.data;
         setProperty(fetchedProperty);
         
-        // Admin View: Use the special backend function to bypass ownership rules for intake
+        // Admin View: Use PropertyIntake filter to get intake data for this property
         console.log(`[Admin] Fetching intake form for property: ${propertyId}`);
-        const intakeResponse = await getIntakeForPropertyAdmin({ property_id: propertyId });
+        const intakeRecords = await PropertyIntake.filter({ property_id: propertyId });
         let propertyIntakeData = null;
-        if (intakeResponse?.data?.success && intakeResponse.data.data) {
-          propertyIntakeData = intakeResponse.data.data;
-          console.log("[Admin] Found intake record:", intakeResponse.data.data);
+        if (intakeRecords && intakeRecords.length > 0) {
+          propertyIntakeData = intakeRecords[0];
+          console.log("[Admin] Found intake record:", intakeRecords[0]);
         } else {
           console.log("[Admin] No intake record found for this property.");
         }

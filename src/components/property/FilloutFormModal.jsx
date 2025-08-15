@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { X } from "lucide-react";
 
 export default function FilloutFormModal({ isOpen, onClose, formUrl }) {
+  console.log('🔍 FilloutFormModal props:', { isOpen, formUrl });
+  
   if (!isOpen) {
     return null;
   }
@@ -15,6 +17,10 @@ export default function FilloutFormModal({ isOpen, onClose, formUrl }) {
           <DialogDescription>
             Please fill out the required information below. Your progress is saved automatically.
           </DialogDescription>
+          {/* URL Display for debugging */}
+          <div className="mt-3 p-2 bg-gray-100 rounded text-xs break-all">
+            <strong>Form URL:</strong> {formUrl || 'No URL provided'}
+          </div>
         </DialogHeader>
         <div className="flex-grow overflow-hidden">
           {formUrl ? (

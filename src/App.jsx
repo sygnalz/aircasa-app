@@ -8,6 +8,7 @@ import Home from '@/pages/index.jsx';
 import Dashboard from '@/pages/Dashboard.jsx';
 import Properties from '@/pages/Properties.jsx';
 import PropertyDetails from '@/pages/PropertyDetails.jsx';
+import PropertyWorkspace from '@/pages/PropertyWorkspace.jsx';
 import AirtableDebug from '@/pages/AirtableDebug.jsx';
 import OnboardingPage from '@/pages/Onboarding.jsx';
 import { UserRoute } from './components/auth/ProtectedRoute';
@@ -22,12 +23,16 @@ function AuthGate({ children }) {
     const initAuth = async () => {
       try {
         // initial session
+        console.log('🔍 AuthGate: Getting initial session...');
         const { data } = await supabase.auth.getSession();
+        console.log('🔍 AuthGate: Initial session data:', data);
         setSession(data.session ?? null);
         setLoading(false);
 
         // subscribe to auth changes
-        const { data: sub } = supabase.auth.onAuthStateChange((_evt, sess) => {
+        console.log('🔍 AuthGate: Setting up auth state change listener...');
+        const { data: sub } = supabase.auth.onAuthStateChange((evt, sess) => {
+          console.log('🔍 AuthGate: Auth state changed:', evt, sess);
           setSession(sess ?? null);
         });
         // safe cleanup guard
@@ -36,6 +41,7 @@ function AuthGate({ children }) {
         console.error('Auth initialization error:', error);
         // In demo mode, auto-authenticate
         if (isDemoMode) {
+          console.log('🔍 AuthGate: Setting demo session due to error');
           setSession({
             user: {
               id: 'demo-user-123',
@@ -195,6 +201,7 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/properties" element={<Properties />} />
         <Route path="/property/:propertyId" element={<PropertyDetails />} />
+        <Route path="/propertyworkspace" element={<PropertyWorkspace />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/airtable-debug" element={<AirtableDebug />} />
       </Route>

@@ -13,19 +13,26 @@ export const User = {
    * Falls back to Supabase session if API is unavailable.
    */
   async me() {
+    console.log('🔍 User.me() called');
     try {
+      console.log('🔍 Trying aircasa.me() API call...');
       const res = await aircasa.me();
+      console.log('✅ aircasa.me() success:', res);
       return res?.user ?? null;
-    } catch {
+    } catch (error) {
+      console.log('⚠️ aircasa.me() failed, falling back to Supabase session:', error.message);
       // Fallback to Supabase session to avoid breaking UI
       const { data } = await supabase.auth.getSession();
       const sess = data.session;
+      console.log('🔍 Supabase session:', sess);
       if (!sess) return null;
-      return {
+      const user = {
         id: sess.user.id,
         email: sess.user.email,
-        role: (sess.user.role ?? 'authenticated'),
+        role: sess.user.role || 'authenticated', // For demo mode, use 'authenticated' role
       };
+      console.log('✅ Returning demo user:', user);
+      return user;
     }
   },
 
@@ -54,9 +61,40 @@ export const User = {
   },
 };
 
-// ---- Placeholders for remaining Base44 entities ----
-// We will replace these incrementally with our own API calls.
-export const Signup = {};          // TODO: migrate to AirCasa route
-export const AIInsight = {};       // TODO: migrate to AirCasa route
-export const PropertyIntake = {};  // TODO: migrate to AirCasa route
-export const Task = {};            // TODO: migrate to AirCasa route
+// ---- Temporary mock implementations for demo mode ----
+// These will be replaced with proper API calls when the backend is ready
+export const Signup = {};
+
+export const AIInsight = {
+  async filter(filterObj) {
+    console.log('🤖 AIInsight.filter called with:', filterObj);
+    // Return empty array for now - no AI insights in demo
+    return [];
+  }
+};
+
+export const PropertyIntake = {
+  async filter(filterObj) {
+    console.log('📝 PropertyIntake.filter called with:', filterObj);
+    // Return empty array for now - no intake records in demo
+    return [];
+  },
+  async update(id, updates) {
+    console.log('📝 PropertyIntake.update called with:', { id, updates });
+    // Return mock success for demo
+    return { id, ...updates };
+  },
+  async create(data) {
+    console.log('📝 PropertyIntake.create called with:', data);
+    // Return mock created record for demo
+    return { id: 'demo-intake-' + Date.now(), ...data };
+  }
+};
+
+export const Task = {
+  async filter(filterObj) {
+    console.log('✅ Task.filter called with:', filterObj);
+    // Return empty array for now - no tasks in demo
+    return [];
+  }
+};
