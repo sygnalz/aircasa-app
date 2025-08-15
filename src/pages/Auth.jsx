@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/lib/supabaseClient";
+import { properties } from "@/api/functions";
 
 export default function Auth() {
   const navigate = useNavigate();
@@ -8,9 +9,48 @@ export default function Auth() {
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
 
-  // If a session already exists (or appears), go to /dashboard
+  // If a session exists, check if user has properties to determine where to redirect
   useEffect(() => {
     let unsub = () => {};
+
+    const handleUserRedirection = async (session) => {
+      if (!session?.user) return;
+      
+      try {
+        // Check if user has any properties
+        console.log('🔍 Checking user properties for redirection...');
+        const propertiesData = await properties.list();
+        
+        if (propertiesData?.items) {
+          const userProperties = propertiesData.items.filter(property => {
+            return (
+              property.ownerEmail === session.user.email ||
+              property.app_email === session.user.email ||
+              property.app_owner_user_id === session.user.id
+            );
+          });
+          
+          console.log('📊 User properties found:', userProperties.length);
+          
+          // If user has properties, go to dashboard; otherwise go to onboarding
+          if (userProperties.length > 0) {
+            console.log('➡️ Redirecting to dashboard (existing user with properties)');
+            navigate("/dashboard", { replace: true });
+          } else {
+            console.log('➡️ Redirecting to onboarding (new user or no properties)');
+            navigate("/onboarding", { replace: true });
+          }
+        } else {
+          // If we can't check properties, default to onboarding for safety
+          console.log('➡️ Redirecting to onboarding (unable to check properties)');
+          navigate("/onboarding", { replace: true });
+        }
+      } catch (error) {
+        console.error('Error checking user properties:', error);
+        // On error, redirect to onboarding to be safe
+        navigate("/onboarding", { replace: true });
+      }
+    };
 
     (async () => {
       const { data } = await supabase.auth.getSession();
@@ -18,13 +58,15 @@ export default function Auth() {
       setLoading(false);
 
       if (data.session) {
-        navigate("/dashboard", { replace: true });
+        await handleUserRedirection(data.session);
       }
     })();
 
-    const sub = supabase.auth.onAuthStateChange((_evt, sess) => {
+    const sub = supabase.auth.onAuthStateChange(async (_evt, sess) => {
       setSession(sess ?? null);
-      if (sess) navigate("/dashboard", { replace: true });
+      if (sess) {
+        await handleUserRedirection(sess);
+      }
     });
 
     unsub = () => sub.data.subscription.unsubscribe();

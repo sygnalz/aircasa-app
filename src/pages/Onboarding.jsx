@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Signup } from "@/api/entities";
 import { User } from "@/api/entities";
-import { SendEmail } from "@/api/integrations";
+import { Core } from "@/api/integrations";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { properties as propertiesFunction } from "@/api/functions/properties.js";
@@ -91,7 +91,7 @@ export default function OnboardingPage() {
         await User.updateMyUserData({ phone_number: completeData.phone });
       }
       
-      const { data: propertyRecord, error } = await propertiesFunction({
+      const propertyResponse = await propertiesFunction({
         operation: 'create',
         payload: {
           address: completeData.property_address,
@@ -116,34 +116,26 @@ export default function OnboardingPage() {
           referred_by: completeData.referred_by || null,
         }
       });
-
-      if (error) {
-          const detailedError = error.response?.data?.error || error.message || "An unknown error occurred.";
-          throw new Error(detailedError);
-      }
       
-      if (!propertyRecord || !propertyRecord.data) {
+      if (!propertyResponse || !propertyResponse.data) {
           throw new Error("Failed to create property record. The response was empty.");
       }
 
-      // Create signup record without pricing plan, defaulting to 'basic'
-      await Signup.create({
-        property_address: completeData.property_address,
-        first_name: completeData.first_name,
-        last_name: completeData.last_name,
-        email: completeData.email,
-        phone: completeData.phone || 'N/A',
-        pricing_plan: 'basic', // Default plan, as package selection is removed
-        current_step: 3, // Adjusted for new flow (last step before completion)
-        completed: true,
-        property_id: propertyRecord.data.id
-      });
+      console.log('✅ Property created in Onboarding:', propertyResponse);
 
-      await SendEmail({
+      // Property creation is successful - signup tracking removed as property is primary record
+
+      // Email notification - temporarily disabled as Core.SendEmail not implemented
+      // TODO: Implement email notification service
+      /* 
+      await Core.SendEmail({
         to: completeData.email,
         subject: "Welcome to AirCasa - Your Property is Ready!",
         body: `Hello ${completeData.first_name},\n\nWe're excited to help you with your property at ${completeData.property_address}.\n\nYour property has been added to your dashboard. You can complete the setup tasks and choose your plan from there.\n\nBest regards,\nThe AirCasa Team`
       });
+      */
+
+      console.log('🎉 Onboarding completed successfully! Property created and user redirecting to dashboard.');
 
       navigate(createPageUrl("Dashboard"));
     } catch (error) {
