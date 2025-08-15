@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { properties } from '@/api/functions';
+import { userSpecificAPI } from '../api/userSpecificFunctions';
+import { useAuth } from '../contexts/AuthContext';
 import PropertyCard from '@/components/properties/PropertyCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -111,6 +113,7 @@ const sampleProperties = [
 ];
 
 export default function PropertiesPage() {
+  const { user, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
   const [error, setError] = useState(null);
@@ -120,31 +123,64 @@ export default function PropertiesPage() {
   const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
 
   async function load() {
+    if (!isAuthenticated || !user?.email) {
+      console.log('⚠️ User not authenticated, cannot load properties');
+      setLoading(false);
+      return;
+    }
+
     setError(null);
     setLoading(true);
     try {
-      console.log('🔄 Loading properties from Airtable...');
-      const data = await properties.list();
+      console.log(`🔄 Loading properties for user: ${user.email}...`);
       
-      if (data?.items && Array.isArray(data.items)) {
-        console.log(`✅ Loaded ${data.items.length} properties from Airtable`);
-        setItems(data.items);
+      // Use user-specific API to get only this user's properties
+      const userProperties = await userSpecificAPI.getUserProperties(user.email, user.id);
+      
+      if (Array.isArray(userProperties)) {
+        console.log(`✅ Loaded ${userProperties.length} user-specific properties`);
+        setItems(userProperties);
       } else {
-        console.log('⚠️ No properties data received, using fallback');
+        console.log('⚠️ No user properties data received');
         setItems([]);
       }
     } catch (err) {
-      console.error('❌ Error loading properties:', err.message);
+      console.error('❌ Error loading user properties:', err.message);
       setError(`Failed to load properties: ${err.message}`);
-      setItems([]);
+      
+      // Fallback: try to load all properties and filter client-side
+      try {
+        console.log('🔄 Trying fallback method...');
+        const data = await properties.list();
+        if (data?.items && Array.isArray(data.items)) {
+          // Filter properties for current user
+          const filteredProperties = data.items.filter(property => {
+            return (
+              property.ownerEmail === user.email ||
+              property.app_owner_user_id === user.id ||
+              property.app_email === user.email
+            );
+          });
+          console.log(`✅ Fallback: Found ${filteredProperties.length} properties for user`);
+          setItems(filteredProperties);
+          setError(null); // Clear error if fallback works
+        } else {
+          setItems([]);
+        }
+      } catch (fallbackErr) {
+        console.error('❌ Fallback also failed:', fallbackErr.message);
+        setItems([]);
+      }
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    if (isAuthenticated && user?.email) {
+      load();
+    }
+  }, [isAuthenticated, user]);
 
   // Filter and sort properties
   const filteredProperties = items
@@ -213,10 +249,15 @@ export default function PropertiesPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Properties</h1>
+          <h1 className="text-3xl font-bold tracking-tight">My Properties</h1>
           <p className="text-muted-foreground">
             Manage your rental properties and track their performance
           </p>
+          {user?.email && (
+            <p className="text-sm text-muted-foreground">
+              Showing properties for: {user.email}
+            </p>
+          )}
         </div>
         <div className="flex items-center space-x-4">
           <Button onClick={load} variant="outline" size="sm" disabled={loading}>

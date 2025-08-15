@@ -43,12 +43,24 @@ export const propertiesAPI = {
   // Get properties by user ID
   async getByUserId(userId) {
     try {
+      // Validate userId before making the query
+      if (!userId || typeof userId !== 'string') {
+        console.warn('Invalid userId provided to getByUserId:', userId);
+        return [];
+      }
+      
+      console.log(`🔍 Fetching properties for user ID: ${userId}`);
       const records = await propertiesService.getAll({
         filterByFormula: `{app_owner_user_id} = "${userId}"`
       });
+      console.log(`✅ Found ${records.length} properties for user ID: ${userId}`);
       return records.map(record => transformUserProperty(record));
     } catch (error) {
-      console.error('Error fetching user properties:', error);
+      console.error('Error fetching user properties by ID:', error);
+      // Log more details about the error
+      if (error.message.includes('filterByFormula')) {
+        console.error('Filter formula error - userId was:', userId);
+      }
       return [];
     }
   },

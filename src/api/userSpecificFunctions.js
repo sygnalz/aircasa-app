@@ -11,26 +11,49 @@ export const userSpecificAPI = {
   // Get properties for a specific user (by email or user ID)
   async getUserProperties(userEmail, userId = null) {
     try {
-      console.log(`🏠 Fetching properties for user: ${userEmail}`);
+      console.log(`🏠 Fetching properties for user: ${userEmail} (ID: ${userId})`);
       
-      // Get all properties and filter by user
+      // First try to get properties by user ID if available
+      if (userId) {
+        try {
+          console.log(`🔍 Trying to fetch properties by user ID: ${userId}`);
+          const userPropertiesByID = await userAPI.properties.getByUserId(userId);
+          if (userPropertiesByID && userPropertiesByID.length > 0) {
+            console.log(`✅ Found ${userPropertiesByID.length} properties by user ID`);
+            return userPropertiesByID;
+          }
+        } catch (idError) {
+          console.warn('Failed to fetch by user ID, trying alternative method:', idError.message);
+        }
+      }
+      
+      // Fallback: Get all properties and filter by user (client-side filtering)
+      console.log('🔄 Fetching all properties for client-side filtering...');
       const allProperties = await userAPI.properties.getAll();
       
       // Filter properties that belong to this user
       const userProperties = allProperties.filter(property => {
-        return (
+        const matchesEmail = (
           property.ownerEmail === userEmail ||
+          property.app_email === userEmail ||
+          property.email === userEmail
+        );
+        
+        const matchesUserId = userId && (
           property.ownerUserId === userId ||
           property.app_owner_user_id === userId ||
-          property.app_email === userEmail
+          property.user_id === userId
         );
+        
+        return matchesEmail || matchesUserId;
       });
       
-      console.log(`✅ Found ${userProperties.length} properties for user ${userEmail}`);
+      console.log(`✅ Found ${userProperties.length} properties for user ${userEmail} via client-side filtering`);
       return userProperties;
       
     } catch (error) {
       console.error('Error fetching user properties:', error);
+      // Return empty array instead of throwing to prevent page crashes
       return [];
     }
   },
