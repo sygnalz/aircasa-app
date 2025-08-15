@@ -15,6 +15,65 @@ const get = (obj, path, defaultValue = null) => {
   return result === undefined || result === null ? defaultValue : result;
 };
 
+// Helper function to extract schools by grade level as per PDF documentation
+const extractSchoolByGrade = (schools, gradeLevel) => {
+  if (!schools || !Array.isArray(schools)) return null;
+  
+  for (const school of schools) {
+    const grades = school.gradeLevel || '';
+    const gradeLower = grades.toLowerCase();
+    
+    if (gradeLevel === 'elementary') {
+      // Elementary: PK, KG, K, 1-5
+      if (gradeLower.includes('pk') || gradeLower.includes('kg') || 
+          gradeLower.includes('k-') || gradeLower.includes('1-') ||
+          gradeLower.includes('2-') || gradeLower.includes('3-') ||
+          gradeLower.includes('4-') || gradeLower.includes('5-') ||
+          gradeLower.includes('-5')) {
+        return school.name;
+      }
+    } else if (gradeLevel === 'middle') {
+      // Middle: 6-8
+      if (gradeLower.includes('6-') || gradeLower.includes('7-') || 
+          gradeLower.includes('8-') || gradeLower.includes('-8')) {
+        return school.name;
+      }
+    } else if (gradeLevel === 'high') {
+      // High: 9-12
+      if (gradeLower.includes('9-') || gradeLower.includes('10-') || 
+          gradeLower.includes('11-') || gradeLower.includes('12-') ||
+          gradeLower.includes('-12')) {
+        return school.name;
+      }
+    }
+  }
+  
+  return null;
+};
+
+// Process school data from /property/detailwithschools endpoint
+const extractSchoolData = (attomSchools) => {
+  if (!attomSchools || !attomSchools.property || !attomSchools.property[0]) {
+    return {
+      district: null,
+      elementary: null,
+      middle: null,
+      high: null
+    };
+  }
+  
+  const property = attomSchools.property[0];
+  const district = get(property, 'schoolDistrict.0.districtname', null);
+  const schools = get(property, 'schools', []);
+  
+  return {
+    district,
+    elementary: extractSchoolByGrade(schools, 'elementary'),
+    middle: extractSchoolByGrade(schools, 'middle'),
+    high: extractSchoolByGrade(schools, 'high')
+  };
+};
+
 // Zillow API backend calls (moved from frontend for security)
 const callZillowAPI = async (endpoint, params) => {
   const rapidAPIKey = import.meta.env.VITE_ZILLOW_RAPIDAPI_KEY;
@@ -165,21 +224,22 @@ export const properties = async ({ operation, payload }) => {
     let attomId = null;
 
     try {
-      // Get expanded profile first to get attomId
+      // Get expanded profile first to get attomId - using correct endpoint path
       attomExpandedProfile = await callAttomAPI('expandedprofile', { 
         address: payload.address 
       });
       
-      // Extract attomId for school data
+      // Extract attomId for school data - using correct field path from PDF
       if (attomExpandedProfile && attomExpandedProfile.property && attomExpandedProfile.property[0]) {
         attomId = get(attomExpandedProfile, 'property.0.identifier.attomId');
+        console.log('🔍 Extracted attomId:', attomId);
       }
     } catch (error) {
       console.warn('⚠️ ATTOM expandedprofile failed:', error.message);
     }
 
     try {
-      // Get assessment data
+      // Get assessment data - using correct endpoint path  
       attomAssessment = await callAttomAPI('assessment', { 
         address: payload.address 
       });
@@ -234,11 +294,16 @@ export const properties = async ({ operation, payload }) => {
       phone: payload.phone,
       referred_by: payload.referred_by || null,
       
-      // Additional ATTOM data for school information
-      school_district: get(attomSchools, 'property.0.school.district.name'),
-      elementary_school: get(attomSchools, 'property.0.school.elementary.name'),
-      middle_school: get(attomSchools, 'property.0.school.middle.name'),
-      high_school: get(attomSchools, 'property.0.school.high.name'),
+      // Process school data using helper function as per PDF documentation
+      ...((() => {
+        const schoolData = extractSchoolData(attomSchools);
+        return {
+          school_district: schoolData.district,
+          elementary_school: schoolData.elementary,
+          middle_school: schoolData.middle,
+          high_school: schoolData.high
+        };
+      })()),
       
       // Tax and legal data from ATTOM
       tax_amount: get(attomAssessment, 'assessment.0.tax.taxtot'),
@@ -249,40 +314,55 @@ export const properties = async ({ operation, payload }) => {
       parcel_number: get(attomExpandedProfile, 'property.0.lot.apn'),
       legal_description: get(attomAssessment, 'assessment.0.legal.legal1'),
       
-      // Comprehensive ATTOM data mapping to Airtable schema
+      // Comprehensive ATTOM data mapping using correct field paths from PDF documentation
+      // From /property/expandedprofile endpoint
       attom_street_address: get(attomExpandedProfile, 'property.0.address.line1'),
       attom_city: get(attomExpandedProfile, 'property.0.address.locality'),
       attom_state: get(attomExpandedProfile, 'property.0.address.countrySubd'),
       attom_zip: get(attomExpandedProfile, 'property.0.address.postal1'),
       attom_country: get(attomExpandedProfile, 'property.0.address.country', 'US'),
-      attom_subdivision: get(attomExpandedProfile, 'property.0.area.subdname'),
-      attom_municipality: get(attomExpandedProfile, 'property.0.area.munname'),
-      attom_county: get(attomExpandedProfile, 'property.0.area.countyname'),
-      attom_use_type: get(attomExpandedProfile, 'property.0.summary.propclass'),
-      attom_year_built: get(attomExpandedProfile, 'property.0.summary.yearbuilt'),
-      attom_levels: get(attomExpandedProfile, 'property.0.building.rooms.storeytype'),
-      attom_finished_sf: get(attomExpandedProfile, 'property.0.building.size.bldgsize'),
-      attom_siding: get(attomExpandedProfile, 'property.0.building.exterior.walltype'),
-      attom_roof_type: get(attomExpandedProfile, 'property.0.building.construction.rooftype'),
-      attom_central_air: get(attomExpandedProfile, 'property.0.utilities.coolingtype'),
-      attom_heating_type: get(attomExpandedProfile, 'property.0.utilities.heatingtype'),
-      attom_heating_fuel: get(attomExpandedProfile, 'property.0.utilities.heatingfuel'),
-      attom_fireplace_number: get(attomExpandedProfile, 'property.0.building.interior.fplccount'),
-      attom_lot_size: get(attomExpandedProfile, 'property.0.lot.lotsize1'),
-      attom_lot_zoning: get(attomExpandedProfile, 'property.0.summary.zoning'),
-      attom_mortgage_amount: get(attomAssessment, 'assessment.0.deed.amount'),
-      attom_2nd_mortgage: get(attomAssessment, 'assessment.0.deed.amount2'),
-      attom_pool_type: get(attomExpandedProfile, 'property.0.building.pool.pooltype'),
-      attom_flooring: get(attomExpandedProfile, 'property.0.building.interior.floortype'),
-      attom_taxes: get(attomAssessment, 'assessment.0.tax.taxtot'),
-      attom_legal_desc1: get(attomAssessment, 'assessment.0.legal.legal1'),
-      attom_legal_desc2: get(attomAssessment, 'assessment.0.legal.legal2'),
-      attom_legal_desc3: get(attomAssessment, 'assessment.0.legal.legal3'),
-      attom_tax_id: get(attomExpandedProfile, 'property.0.lot.apn'),
-      attom_school_district: get(attomSchools, 'property.0.school.district.name'),
-      attom_elementary_school: get(attomSchools, 'property.0.school.elementary.name'),
-      attom_middle_school: get(attomSchools, 'property.0.school.middle.name'),
-      attom_high_school: get(attomSchools, 'property.0.school.high.name'),
+      attom_subdivision: get(attomExpandedProfile, 'property.0.area.subdName'),
+      attom_municipality: get(attomExpandedProfile, 'property.0.address.locality'),
+      attom_county: get(attomExpandedProfile, 'property.0.area.countrySecSubd'),
+      attom_use_type: get(attomExpandedProfile, 'property.0.summary.propertyType'),
+      attom_year_built: get(attomExpandedProfile, 'property.0.summary.yearBuilt'),
+      attom_levels: get(attomExpandedProfile, 'property.0.building.summary.levels'),
+      attom_finished_sf: get(attomExpandedProfile, 'property.0.building.size.livingSize'),
+      attom_siding: get(attomExpandedProfile, 'property.0.building.construction.wallType'),
+      attom_roof_type: get(attomExpandedProfile, 'property.0.building.construction.roofCover'),
+      attom_central_air: get(attomExpandedProfile, 'property.0.utilities.coolingType'),
+      attom_heating_type: get(attomExpandedProfile, 'property.0.utilities.heatingType'),
+      attom_heating_fuel: get(attomExpandedProfile, 'property.0.utilities.heatingFuel'),
+      attom_fireplace_number: get(attomExpandedProfile, 'property.0.building.interior.fplcCount'),
+      attom_lot_size: get(attomExpandedProfile, 'property.0.lot.lotSize1'),
+      attom_lot_zoning: get(attomExpandedProfile, 'property.0.lot.zoningType'),
+      attom_mortgage_amount: get(attomExpandedProfile, 'property.0.assessment.mortgage.FirstConcurrent.amount'),
+      attom_2nd_mortgage: get(attomExpandedProfile, 'property.0.assessment.mortgage.SecondConcurrent.amount'),
+      
+      // From /assessment/detail endpoint
+      attom_taxes: get(attomAssessment, 'assessment.0.tax.taxAmt'),
+      attom_tax_id: get(attomAssessment, 'assessment.0.area.taxcodearea'),
+      attom_architectural_style: get(attomAssessment, 'assessment.0.building.summary.archStyle'),
+      attom_water_source: get(attomAssessment, 'assessment.0.utilities.watertype'),
+      attom_sewer_type: get(attomAssessment, 'assessment.0.utilities.sewertype'),
+      attom_pool_type: get(attomAssessment, 'assessment.0.lot.pooltype'),
+      attom_garage: get(attomAssessment, 'assessment.0.building.parking.garageType'),
+      attom_flooring: get(attomAssessment, 'assessment.0.building.interior.floors'),
+      attom_designated_historic: get(attomAssessment, 'assessment.0.building.summary.imprType'),
+      attom_legal_desc1: get(attomAssessment, 'assessment.0.summary.legal1'),
+      attom_legal_desc2: get(attomAssessment, 'assessment.0.summary.legal2'),
+      attom_legal_desc3: get(attomAssessment, 'assessment.0.summary.legal3'),
+      
+      // School data processed with custom extraction logic as per PDF
+      ...((() => {
+        const schoolData = extractSchoolData(attomSchools);
+        return {
+          attom_school_district: schoolData.district,
+          attom_elementary_school: schoolData.elementary,
+          attom_middle_school: schoolData.middle,
+          attom_high_school: schoolData.high
+        };
+      })()),
     };
 
     console.log('📊 Enriched property data:', JSON.stringify(enrichedPropertyData, null, 2));
