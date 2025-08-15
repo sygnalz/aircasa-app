@@ -1,7 +1,7 @@
 import { Routes, Route, Outlet } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase, isDemoMode } from './lib/supabaseClient';
-import { AppLayout } from '@/components/layout/AppLayout';
+import RoleBasedLayout from '@/components/layout/RoleBasedLayout';
 
 import Auth from '@/pages/Auth.jsx';
 import Home from '@/pages/index.jsx';
@@ -174,9 +174,9 @@ function ProtectedShell() {
 
   return (
     <AuthGate>
-      <AppLayout user={session?.user}>
+      <RoleBasedLayout>
         <Outlet />
-      </AppLayout>
+      </RoleBasedLayout>
     </AuthGate>
   );
 }
