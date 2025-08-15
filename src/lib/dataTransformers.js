@@ -179,49 +179,40 @@ export function transformPropertyForAirtable(appProperty) {
   console.log('🔄 Transforming property data for Airtable:', JSON.stringify(appProperty, null, 2));
   
   const transformed = {
-    // Remove the "Name" field that was causing "Unknown field name: 'Name'" error
-    // The Airtable Properties table schema doesn't include a "Name" field
-    // Description: appProperty.description, // Also removing since it might not exist
-    
-    // Core property fields that match Airtable schema
-    app_address: appProperty.address, // Match enrichedPropertyData.address
+    // Start with core fields that are confirmed to work
     app_city: appProperty.city,
     app_state: appProperty.state,
-    app_country: appProperty.country,
-    app_zip_code: appProperty.zip_code, // Fixed: should be app_zip_code not app_zip
-    app_property_type: appProperty.property_type, // Match enrichedPropertyData.property_type
     app_bedrooms: appProperty.bedrooms,
     app_bathrooms: appProperty.bathrooms,
-    app_square_feet: appProperty.square_feet, // Match enrichedPropertyData.square_feet
-    app_price: appProperty.estimated_value, // Match enrichedPropertyData.estimated_value
-    app_status: appProperty.status || 'active',
-    app_total_bookings: appProperty.bookings,
-    app_total_revenue: appProperty.revenue,
-    app_average_rating: appProperty.rating,
-    app_review_count: appProperty.reviews,
-    app_images: appProperty.image_url, // Match enrichedPropertyData.image_url
-    app_amenities: appProperty.amenities,
-    app_email: appProperty.email, // Match enrichedPropertyData.email
-    app_owner_user_id: appProperty.app_owner_user_id,
     
-    // Additional enriched fields from Zillow + ATTOM APIs
-    app_year_built: appProperty.year_built,
-    app_lot_size: appProperty.lot_size,
-    app_zillow_zpid: appProperty.zillow_zpid,
-    app_attom_id: appProperty.attom_id,
-    app_mls_verified: appProperty.mls_verified,
-    app_school_district: appProperty.school_district,
-    app_tax_amount: appProperty.tax_amount,
-    app_assessed_value: appProperty.assessed_value,
-    app_parcel_number: appProperty.parcel_number,
+    // Add essential fields one by one
+    app_address: appProperty.address,
+    app_zip_code: appProperty.zip_code, // Using app_zip_code as user confirmed
+    app_property_type: appProperty.property_type,
+    app_square_feet: appProperty.square_feet,
+    app_price: appProperty.estimated_value,
+    app_email: appProperty.email,
     
-    // User information
-    app_first_name: appProperty.first_name,
-    app_last_name: appProperty.last_name,
-    app_phone: appProperty.phone,
-    app_referred_by: appProperty.referred_by,
-    app_is_buying_home: appProperty.is_buying_home
-    // app_last_updated: new Date().toISOString().split('T')[0] // Field doesn't exist in Airtable schema
+    // Additional enriched fields from Zillow + ATTOM APIs (only if they exist in schema)
+    ...(appProperty.year_built && { app_year_built: appProperty.year_built }),
+    ...(appProperty.lot_size && { app_lot_size: appProperty.lot_size }),
+    ...(appProperty.zillow_zpid && { app_zillow_zpid: appProperty.zillow_zpid }),
+    ...(appProperty.attom_id && { app_attom_id: appProperty.attom_id }),
+    ...(appProperty.image_url && { app_images: appProperty.image_url }),
+    
+    // Optional fields that might not exist in schema
+    ...(appProperty.mls_verified !== undefined && { app_mls_verified: appProperty.mls_verified }),
+    ...(appProperty.school_district && { app_school_district: appProperty.school_district }),
+    ...(appProperty.tax_amount && { app_tax_amount: appProperty.tax_amount }),
+    ...(appProperty.assessed_value && { app_assessed_value: appProperty.assessed_value }),
+    ...(appProperty.parcel_number && { app_parcel_number: appProperty.parcel_number }),
+    
+    // User information (if fields exist)
+    ...(appProperty.first_name && { app_first_name: appProperty.first_name }),
+    ...(appProperty.last_name && { app_last_name: appProperty.last_name }),
+    ...(appProperty.phone && { app_phone: appProperty.phone }),
+    ...(appProperty.referred_by && { app_referred_by: appProperty.referred_by }),
+    ...(appProperty.is_buying_home !== undefined && { app_is_buying_home: appProperty.is_buying_home })
   };
   
   console.log('✅ Transformed property data (without Name field):', JSON.stringify(transformed, null, 2));
