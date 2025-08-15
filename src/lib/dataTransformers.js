@@ -176,31 +176,54 @@ export function transformUser(airtableRecord) {
 
 // Transform app property format to Airtable format
 export function transformPropertyForAirtable(appProperty) {
-  return {
-    // Use the primary field names from our mapping
-    Name: appProperty.title,
+  console.log('🔄 Transforming property data for Airtable:', JSON.stringify(appProperty, null, 2));
+  
+  const transformed = {
+    // Use the primary field names from our mapping - matching enrichedPropertyData structure
+    Name: appProperty.title || `${appProperty.address || 'Property'}`,
     Description: appProperty.description,
-    app_address: appProperty.location, // Use app_address as primary field
+    app_address: appProperty.address, // Match enrichedPropertyData.address
     app_city: appProperty.city,
     app_state: appProperty.state,
     app_country: appProperty.country,
-    app_zip: appProperty.zipCode,
-    app_property_type: appProperty.propertyType,
+    app_zip: appProperty.zip_code, // Match enrichedPropertyData.zip_code
+    app_property_type: appProperty.property_type, // Match enrichedPropertyData.property_type
     app_bedrooms: appProperty.bedrooms,
     app_bathrooms: appProperty.bathrooms,
-    app_square_feet: appProperty.area,
-    app_price: appProperty.price,
-    app_status: appProperty.status,
+    app_square_feet: appProperty.square_feet, // Match enrichedPropertyData.square_feet
+    app_price: appProperty.estimated_value, // Match enrichedPropertyData.estimated_value
+    app_status: appProperty.status || 'active',
     app_total_bookings: appProperty.bookings,
     app_total_revenue: appProperty.revenue,
     app_average_rating: appProperty.rating,
     app_review_count: appProperty.reviews,
-    app_images: appProperty.images,
+    app_images: appProperty.image_url, // Match enrichedPropertyData.image_url
     app_amenities: appProperty.amenities,
-    app_email: appProperty.ownerEmail,
+    app_email: appProperty.email, // Match enrichedPropertyData.email
     app_owner_user_id: appProperty.app_owner_user_id,
+    
+    // Additional enriched fields from Zillow + ATTOM APIs
+    app_year_built: appProperty.year_built,
+    app_lot_size: appProperty.lot_size,
+    app_zillow_zpid: appProperty.zillow_zpid,
+    app_attom_id: appProperty.attom_id,
+    app_mls_verified: appProperty.mls_verified,
+    app_school_district: appProperty.school_district,
+    app_tax_amount: appProperty.tax_amount,
+    app_assessed_value: appProperty.assessed_value,
+    app_parcel_number: appProperty.parcel_number,
+    
+    // User information
+    app_first_name: appProperty.first_name,
+    app_last_name: appProperty.last_name,
+    app_phone: appProperty.phone,
+    app_referred_by: appProperty.referred_by,
+    app_is_buying_home: appProperty.is_buying_home
     // app_last_updated: new Date().toISOString().split('T')[0] // Field doesn't exist in Airtable schema
   };
+  
+  console.log('✅ Transformed property data:', JSON.stringify(transformed, null, 2));
+  return transformed;
 }
 
 // Transform app user format to Airtable format

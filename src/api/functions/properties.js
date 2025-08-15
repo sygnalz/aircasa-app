@@ -250,11 +250,12 @@ export const properties = async ({ operation, payload }) => {
       legal_description: get(attomAssessment, 'assessment.0.legal.legal1'),
     };
 
-    console.log('📊 Enriched property data:', enrichedPropertyData);
+    console.log('📊 Enriched property data:', JSON.stringify(enrichedPropertyData, null, 2));
 
     // Step 5: Transform and save to Airtable
     console.log('💾 Step 5: Saving to Airtable...');
     const airtableFields = transformPropertyForAirtable(enrichedPropertyData);
+    console.log('🗂️ Airtable fields to save:', JSON.stringify(airtableFields, null, 2));
     const airtableRecord = await propertiesService.create(airtableFields);
 
     console.log('✅ Property created successfully:', airtableRecord.id);
