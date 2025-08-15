@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import AuthDebug from '../debug/AuthDebug';
 
 export default function UnauthorizedAccess({ 
   requiredRoles = [], 
@@ -92,6 +93,9 @@ export default function UnauthorizedAccess({
           </div>
         </CardContent>
       </Card>
+
+      {/* Debug Information */}
+      <AuthDebug />
     </div>
   );
 }

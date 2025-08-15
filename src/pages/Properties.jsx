@@ -4,6 +4,7 @@ import { userSpecificAPI } from '../api/userSpecificFunctions';
 import { useAuth } from '../contexts/AuthContext';
 import { debugUserProperties } from '../utils/debugProperties';
 import { testAirtableConnection } from '../utils/testAirtable';
+import AuthDebug from '../components/debug/AuthDebug';
 import PropertyCard from '@/components/properties/PropertyCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -272,6 +273,9 @@ export default function PropertiesPage() {
 
   return (
     <div className="space-y-8">
+      {/* Debug Info */}
+      <AuthDebug />
+      
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>

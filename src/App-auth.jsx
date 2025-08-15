@@ -6,6 +6,7 @@ import LoginPage from './components/auth/LoginPage';
 import DashboardRouter from './components/dashboard/DashboardRouter';
 import Properties from './pages/Properties';
 import AirtableSetupPage from './pages/AirtableSetupPage';
+import AirtableDebug from './pages/AirtableDebug';
 import { 
   ProtectedRoute, 
   AdminRoute, 
@@ -150,6 +151,13 @@ function App() {
                     <Route path="/conversations" element={
                       <ProtectedRoute>
                         <div>Conversations (Coming Soon)</div>
+                      </ProtectedRoute>
+                    } />
+
+                    {/* Debug route */}
+                    <Route path="/airtable-debug" element={
+                      <ProtectedRoute>
+                        <AirtableDebug />
                       </ProtectedRoute>
                     } />
 
