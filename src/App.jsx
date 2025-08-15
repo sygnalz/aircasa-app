@@ -9,6 +9,7 @@ import Dashboard from '@/pages/Dashboard.jsx';
 import Properties from '@/pages/Properties.jsx';
 import PropertyDetails from '@/pages/PropertyDetails.jsx';
 import AirtableDebug from '@/pages/AirtableDebug.jsx';
+import OnboardingPage from '@/pages/Onboarding.jsx';
 import { UserRoute } from './components/auth/ProtectedRoute';
 
 function AuthGate({ children }) {
@@ -194,6 +195,7 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/properties" element={<Properties />} />
         <Route path="/property/:propertyId" element={<PropertyDetails />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/airtable-debug" element={<AirtableDebug />} />
       </Route>
 

@@ -163,10 +163,12 @@ export default function Dashboard() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">Your Properties</h2>
-          <Button className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Add New Property
-          </Button>
+          <Link to="/onboarding">
+            <Button className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Add New Property
+            </Button>
+          </Link>
         </div>
 
         {/* Properties Grid */}
@@ -189,17 +191,20 @@ export default function Dashboard() {
                     Get started by adding your first property to the platform.
                   </p>
                 </div>
-                <Button className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Your First Property
-                </Button>
+                <Link to="/onboarding">
+                  <Button className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add Your First Property
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
         )}
       </div>
 
-      {/* Debug Information (for development) */}
+      {/* Debug Information (for development) - Commented out but available for debugging */}
+      {/* 
       {process.env.NODE_ENV === 'development' && (
         <Card className="border-dashed">
           <CardHeader>
@@ -214,6 +219,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       )}
+      */
     </div>
   );
 }
