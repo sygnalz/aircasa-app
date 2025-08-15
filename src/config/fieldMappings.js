@@ -345,291 +345,18 @@ export const USERS_FIELD_MAPPING = {
   }
 };
 
-// Bookings Table Field Mappings
-export const BOOKINGS_FIELD_MAPPING = {
-  id: {
-    airtableFields: ['id', 'Booking ID', 'booking_id'],
-    type: 'string',
-    required: true
-  },
-  bookingId: {
-    airtableFields: ['Booking ID', 'Confirmation Number', 'bookingId'],
-    type: 'string',
-    required: true
-  },
-  
-  // Property Information
-  propertyId: {
-    airtableFields: ['Property ID', 'Property', 'propertyId'],
-    type: 'string',
-    required: true
-  },
-  propertyName: {
-    airtableFields: ['Property Name', 'Property Title', 'propertyName'],
-    type: 'string',
-    default: ''
-  },
-  
-  // Guest Information
-  guestName: {
-    airtableFields: ['Guest Name', 'Customer Name', 'guestName'],
-    type: 'string',
-    required: true
-  },
-  guestEmail: {
-    airtableFields: ['Guest Email', 'Customer Email', 'guestEmail'],
-    type: 'string',
-    required: true
-  },
-  guestPhone: {
-    airtableFields: ['Guest Phone', 'Customer Phone', 'guestPhone'],
-    type: 'string',
-    default: ''
-  },
-  
-  // Booking Details
-  checkInDate: {
-    airtableFields: ['Check-in Date', 'Start Date', 'Arrival Date', 'checkInDate'],
-    type: 'date',
-    required: true
-  },
-  checkOutDate: {
-    airtableFields: ['Check-out Date', 'End Date', 'Departure Date', 'checkOutDate'],
-    type: 'date',
-    required: true
-  },
-  nights: {
-    airtableFields: ['Nights', 'Duration', 'Stay Length', 'nights'],
-    type: 'number',
-    default: 1
-  },
-  numberOfGuests: {
-    airtableFields: ['Number of Guests', 'Guest Count', 'Guests', 'numberOfGuests'],
-    type: 'number',
-    default: 1
-  },
-  
-  // Financial Information
-  totalAmount: {
-    airtableFields: ['Total Amount', 'Total Cost', 'Amount', 'totalAmount'],
-    type: 'number',
-    required: true
-  },
-  baseRate: {
-    airtableFields: ['Base Rate', 'Nightly Rate', 'baseRate'],
-    type: 'number',
-    default: 0
-  },
-  taxes: {
-    airtableFields: ['Taxes', 'Tax Amount', 'taxes'],
-    type: 'number',
-    default: 0
-  },
-  fees: {
-    airtableFields: ['Fees', 'Additional Fees', 'fees'],
-    type: 'number',
-    default: 0
-  },
-  
-  // Status Information
-  status: {
-    airtableFields: ['Status', 'Booking Status', 'status'],
-    type: 'string',
-    default: 'pending'
-  },
-  paymentStatus: {
-    airtableFields: ['Payment Status', 'Payment', 'paymentStatus'],
-    type: 'string',
-    default: 'pending'
-  },
-  paymentMethod: {
-    airtableFields: ['Payment Method', 'Payment Type', 'paymentMethod'],
-    type: 'string',
-    default: ''
-  },
-  
-  // Additional Information
-  specialRequests: {
-    airtableFields: ['Special Requests', 'Requests', 'Notes', 'specialRequests'],
-    type: 'string',
-    default: ''
-  },
-  cancellationPolicy: {
-    airtableFields: ['Cancellation Policy', 'Cancellation', 'cancellationPolicy'],
-    type: 'string',
-    default: 'moderate'
-  },
-  
-  // Dates
-  bookingDate: {
-    airtableFields: ['Booking Date', 'Created Date', 'Reservation Date', 'bookingDate'],
-    type: 'date'
-  },
-  
-  // System Fields
-  _createdTime: {
-    airtableFields: ['_createdTime'],
-    type: 'date'
-  }
-};
+// NOTE: Bookings table mapping removed - table does not exist in the user's Airtable base
 
-// Analytics Table Field Mappings
-export const ANALYTICS_FIELD_MAPPING = {
-  id: {
-    airtableFields: ['id', 'Record ID'],
-    type: 'string',
-    required: true
-  },
-  date: {
-    airtableFields: ['Date', 'Report Date', 'Period', 'date'],
-    type: 'date',
-    required: true
-  },
-  
-  // Revenue Metrics
-  totalRevenue: {
-    airtableFields: ['Total Revenue', 'Revenue', 'Income', 'totalRevenue'],
-    type: 'number',
-    default: 0
-  },
-  averageDailyRate: {
-    airtableFields: ['Average Daily Rate', 'ADR', 'Daily Rate', 'averageDailyRate'],
-    type: 'number',
-    default: 0
-  },
-  revenuePerAvailableRoom: {
-    airtableFields: ['RevPAR', 'Revenue Per Available Room', 'revenuePerAvailableRoom'],
-    type: 'number',
-    default: 0
-  },
-  
-  // Booking Metrics
-  totalBookings: {
-    airtableFields: ['Total Bookings', 'Bookings', 'Reservations', 'totalBookings'],
-    type: 'number',
-    default: 0
-  },
-  occupancyRate: {
-    airtableFields: ['Occupancy Rate', 'Occupancy', 'occupancyRate'],
-    type: 'number',
-    default: 0
-  },
-  averageStayLength: {
-    airtableFields: ['Average Stay Length', 'Stay Length', 'averageStayLength'],
-    type: 'number',
-    default: 0
-  },
-  
-  // User Metrics
-  newUsers: {
-    airtableFields: ['New Users', 'New Registrations', 'newUsers'],
-    type: 'number',
-    default: 0
-  },
-  activeUsers: {
-    airtableFields: ['Active Users', 'Monthly Active Users', 'activeUsers'],
-    type: 'number',
-    default: 0
-  },
-  
-  // Performance Metrics
-  propertyViews: {
-    airtableFields: ['Property Views', 'Page Views', 'Views', 'propertyViews'],
-    type: 'number',
-    default: 0
-  },
-  conversionRate: {
-    airtableFields: ['Conversion Rate', 'Booking Conversion', 'conversionRate'],
-    type: 'number',
-    default: 0
-  },
-  clickThroughRate: {
-    airtableFields: ['Click Through Rate', 'CTR', 'clickThroughRate'],
-    type: 'number',
-    default: 0
-  },
-  
-  // Top Performers
-  topProperty: {
-    airtableFields: ['Top Property', 'Best Property', 'topProperty'],
-    type: 'string',
-    default: ''
-  },
-  topLocation: {
-    airtableFields: ['Top Location', 'Best Location', 'topLocation'],
-    type: 'string',
-    default: ''
-  },
-  topRevenue: {
-    airtableFields: ['Top Revenue', 'Highest Revenue', 'topRevenue'],
-    type: 'number',
-    default: 0
-  },
-  
-  // System Fields
-  _createdTime: {
-    airtableFields: ['_createdTime'],
-    type: 'date'
-  }
-};
+// NOTE: Analytics table mapping removed - table does not exist in the user's Airtable base
 
-// Roles Table Field Mappings
-export const ROLES_FIELD_MAPPING = {
-  id: {
-    airtableFields: ['id', 'Role ID'],
-    type: 'string',
-    required: true
-  },
-  userId: {
-    airtableFields: ['User ID', 'user_id', 'userId'],
-    type: 'string',
-    required: true
-  },
-  email: {
-    airtableFields: ['Email', 'User Email', 'email'],
-    type: 'string',
-    required: true
-  },
-  role: {
-    airtableFields: ['Role', 'User Role', 'Type', 'role'],
-    type: 'string',
-    required: true,
-    default: 'User'
-  },
-  permissions: {
-    airtableFields: ['Permissions', 'Access Level', 'permissions'],
-    type: 'array',
-    default: []
-  },
-  status: {
-    airtableFields: ['Status', 'Active', 'status'],
-    type: 'string',
-    default: 'active'
-  },
-  assignedDate: {
-    airtableFields: ['Assigned Date', 'Created Date', 'assignedDate'],
-    type: 'date'
-  },
-  assignedBy: {
-    airtableFields: ['Assigned By', 'Creator', 'assignedBy'],
-    type: 'string',
-    default: ''
-  },
-  
-  // System Fields
-  _createdTime: {
-    airtableFields: ['_createdTime'],
-    type: 'date'
-  }
-};
+// NOTE: Roles table mapping removed - table does not exist in the user's Airtable base
 
-// Table name mappings
+// Table name mappings - only includes tables that exist in the user's Airtable base
 export const TABLE_MAPPINGS = {
   properties: PROPERTIES_FIELD_MAPPING,
-  users: USERS_FIELD_MAPPING,
-  bookings: BOOKINGS_FIELD_MAPPING,
-  analytics: ANALYTICS_FIELD_MAPPING,
-  roles: ROLES_FIELD_MAPPING
+  users: USERS_FIELD_MAPPING
+  // NOTE: Bookings, Analytics, and Roles tables removed - they don't exist in the user's Airtable base
+  // TODO: Add Property Intake Form, Conversations, and AI Access Layer tables when needed
 };
 
 // Utility function to get field value with fallbacks
@@ -695,14 +422,13 @@ export function validateRecord(record, fieldMapping, recordType = 'record') {
   return true;
 }
 
-// Export all mappings for easy access
+// Export all mappings for easy access - only includes existing tables
 export default {
   PROPERTIES_FIELD_MAPPING,
   USERS_FIELD_MAPPING,
-  BOOKINGS_FIELD_MAPPING,
-  ANALYTICS_FIELD_MAPPING,
-  ROLES_FIELD_MAPPING,
   TABLE_MAPPINGS,
   getFieldValue,
   validateRecord
+  // NOTE: Removed BOOKINGS_FIELD_MAPPING, ANALYTICS_FIELD_MAPPING, ROLES_FIELD_MAPPING
+  // as these tables don't exist in the user's Airtable base
 };

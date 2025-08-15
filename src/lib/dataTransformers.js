@@ -1,13 +1,13 @@
 // Data transformation utilities for mapping between Airtable and app formats
 import { 
   PROPERTIES_FIELD_MAPPING, 
-  USERS_FIELD_MAPPING, 
-  BOOKINGS_FIELD_MAPPING, 
-  ANALYTICS_FIELD_MAPPING, 
-  ROLES_FIELD_MAPPING,
+  USERS_FIELD_MAPPING,
   getFieldValue,
   validateRecord
 } from '../config/fieldMappings.js';
+
+// NOTE: Removed imports for BOOKINGS_FIELD_MAPPING, ANALYTICS_FIELD_MAPPING, ROLES_FIELD_MAPPING
+// as these tables don't exist in the user's Airtable base
 
 // Transform Airtable property record to app format using comprehensive field mapping
 export function transformProperty(airtableRecord) {
@@ -168,180 +168,11 @@ export function transformUser(airtableRecord) {
   }
 }
 
-// Transform Airtable booking record to app format using comprehensive field mapping
-export function transformBooking(airtableRecord) {
-  console.log('🔄 Transforming Airtable booking record:', {
-    id: airtableRecord.id,
-    availableFields: Object.keys(airtableRecord).slice(0, 10)
-  });
-  
-  try {
-    const transformed = {
-      id: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'id') || airtableRecord.id,
-      bookingId: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'bookingId'),
-      
-      // Property Information
-      propertyId: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'propertyId'),
-      propertyName: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'propertyName'),
-      
-      // Guest Information
-      guestName: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'guestName'),
-      guestEmail: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'guestEmail'),
-      guestPhone: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'guestPhone'),
-      
-      // Booking Details
-      checkInDate: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'checkInDate'),
-      checkOutDate: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'checkOutDate'),
-      nights: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'nights'),
-      numberOfGuests: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'numberOfGuests'),
-      
-      // Financial Information
-      totalAmount: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'totalAmount'),
-      baseRate: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'baseRate'),
-      taxes: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'taxes'),
-      fees: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'fees'),
-      
-      // Status Information
-      status: (getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'status') || 'pending').toLowerCase(),
-      paymentStatus: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'paymentStatus'),
-      paymentMethod: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'paymentMethod'),
-      
-      // Additional Information
-      specialRequests: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'specialRequests'),
-      cancellationPolicy: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'cancellationPolicy'),
-      
-      // Dates
-      bookingDate: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, 'bookingDate'),
-      
-      // System Fields
-      _createdTime: getFieldValue(airtableRecord, BOOKINGS_FIELD_MAPPING, '_createdTime') || airtableRecord._createdTime
-    };
-    
-    console.log('✅ Booking transformed successfully:', {
-      id: transformed.id,
-      bookingId: transformed.bookingId,
-      propertyName: transformed.propertyName,
-      guestEmail: transformed.guestEmail
-    });
-    
-    return transformed;
-  } catch (error) {
-    console.error('❌ Error transforming booking:', error);
-    // Return a basic transformation as fallback
-    return {
-      id: airtableRecord.id,
-      bookingId: airtableRecord['Booking ID'] || airtableRecord.bookingId || '',
-      guestName: airtableRecord['Guest Name'] || airtableRecord.guestName || '',
-      guestEmail: airtableRecord['Guest Email'] || airtableRecord.guestEmail || '',
-      status: 'pending',
-      _createdTime: airtableRecord._createdTime
-    };
-  }
-}
+// NOTE: transformBooking function removed - Bookings table doesn't exist in the user's Airtable base
 
-// Transform Airtable analytics record to app format using comprehensive field mapping
-export function transformAnalytics(airtableRecord) {
-  console.log('🔄 Transforming Airtable analytics record:', {
-    id: airtableRecord.id,
-    availableFields: Object.keys(airtableRecord).slice(0, 10)
-  });
-  
-  try {
-    const transformed = {
-      id: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'id') || airtableRecord.id,
-      date: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'date'),
-      
-      // Revenue Metrics
-      totalRevenue: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'totalRevenue'),
-      averageDailyRate: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'averageDailyRate'),
-      revenuePerAvailableRoom: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'revenuePerAvailableRoom'),
-      
-      // Booking Metrics
-      totalBookings: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'totalBookings'),
-      occupancyRate: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'occupancyRate'),
-      averageStayLength: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'averageStayLength'),
-      
-      // User Metrics
-      newUsers: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'newUsers'),
-      activeUsers: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'activeUsers'),
-      
-      // Performance Metrics
-      propertyViews: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'propertyViews'),
-      conversionRate: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'conversionRate'),
-      clickThroughRate: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'clickThroughRate'),
-      
-      // Top Performers
-      topProperty: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'topProperty'),
-      topLocation: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'topLocation'),
-      topRevenue: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, 'topRevenue'),
-      
-      // System Fields
-      _createdTime: getFieldValue(airtableRecord, ANALYTICS_FIELD_MAPPING, '_createdTime') || airtableRecord._createdTime
-    };
-    
-    console.log('✅ Analytics transformed successfully:', {
-      id: transformed.id,
-      date: transformed.date,
-      totalRevenue: transformed.totalRevenue,
-      totalBookings: transformed.totalBookings
-    });
-    
-    return transformed;
-  } catch (error) {
-    console.error('❌ Error transforming analytics:', error);
-    // Return a basic transformation as fallback
-    return {
-      id: airtableRecord.id,
-      date: airtableRecord.Date || airtableRecord.date,
-      totalRevenue: airtableRecord['Total Revenue'] || 0,
-      totalBookings: airtableRecord['Total Bookings'] || 0,
-      _createdTime: airtableRecord._createdTime
-    };
-  }
-}
+// NOTE: transformAnalytics function removed - Analytics table doesn't exist in the user's Airtable base
 
-// Transform Airtable role record to app format using comprehensive field mapping
-export function transformRole(airtableRecord) {
-  console.log('🔄 Transforming Airtable role record:', {
-    id: airtableRecord.id,
-    availableFields: Object.keys(airtableRecord).slice(0, 10)
-  });
-  
-  try {
-    const transformed = {
-      id: getFieldValue(airtableRecord, ROLES_FIELD_MAPPING, 'id') || airtableRecord.id,
-      userId: getFieldValue(airtableRecord, ROLES_FIELD_MAPPING, 'userId'),
-      email: getFieldValue(airtableRecord, ROLES_FIELD_MAPPING, 'email'),
-      role: getFieldValue(airtableRecord, ROLES_FIELD_MAPPING, 'role'),
-      permissions: getFieldValue(airtableRecord, ROLES_FIELD_MAPPING, 'permissions'),
-      status: (getFieldValue(airtableRecord, ROLES_FIELD_MAPPING, 'status') || 'active').toLowerCase(),
-      assignedDate: getFieldValue(airtableRecord, ROLES_FIELD_MAPPING, 'assignedDate'),
-      assignedBy: getFieldValue(airtableRecord, ROLES_FIELD_MAPPING, 'assignedBy'),
-      
-      // System Fields
-      _createdTime: getFieldValue(airtableRecord, ROLES_FIELD_MAPPING, '_createdTime') || airtableRecord._createdTime
-    };
-    
-    console.log('✅ Role transformed successfully:', {
-      id: transformed.id,
-      email: transformed.email,
-      role: transformed.role,
-      status: transformed.status
-    });
-    
-    return transformed;
-  } catch (error) {
-    console.error('❌ Error transforming role:', error);
-    // Return a basic transformation as fallback
-    return {
-      id: airtableRecord.id,
-      email: airtableRecord.Email || airtableRecord.email || '',
-      role: airtableRecord.Role || airtableRecord.role || 'User',
-      status: 'active',
-      _createdTime: airtableRecord._createdTime
-    };
-  }
-}
+// NOTE: transformRole function removed - Roles table doesn't exist in the user's Airtable base
 
 // Transform app property format to Airtable format
 export function transformPropertyForAirtable(appProperty) {
@@ -396,65 +227,10 @@ export function transformUserForAirtable(appUser) {
   };
 }
 
-// Transform app booking format to Airtable format
-export function transformBookingForAirtable(appBooking) {
-  return {
-    'Booking ID': appBooking.bookingId,
-    'Property ID': appBooking.propertyId,
-    'Property Name': appBooking.propertyName,
-    'Guest Name': appBooking.guestName,
-    'Guest Email': appBooking.guestEmail,
-    'Guest Phone': appBooking.guestPhone,
-    'Check-in Date': appBooking.checkInDate,
-    'Check-out Date': appBooking.checkOutDate,
-    Nights: appBooking.nights,
-    'Number of Guests': appBooking.numberOfGuests,
-    'Total Amount': appBooking.totalAmount,
-    'Base Rate': appBooking.baseRate,
-    Taxes: appBooking.taxes,
-    Fees: appBooking.fees,
-    Status: appBooking.status,
-    'Payment Status': appBooking.paymentStatus,
-    'Payment Method': appBooking.paymentMethod,
-    'Special Requests': appBooking.specialRequests,
-    'Cancellation Policy': appBooking.cancellationPolicy,
-    'Booking Date': appBooking.bookingDate
-  };
-}
-
-// Transform app analytics format to Airtable format
-export function transformAnalyticsForAirtable(appAnalytics) {
-  return {
-    Date: appAnalytics.date,
-    'Total Revenue': appAnalytics.totalRevenue,
-    'Average Daily Rate': appAnalytics.averageDailyRate,
-    'Revenue Per Available Room': appAnalytics.revenuePerAvailableRoom,
-    'Total Bookings': appAnalytics.totalBookings,
-    'Occupancy Rate': appAnalytics.occupancyRate,
-    'Average Stay Length': appAnalytics.averageStayLength,
-    'New Users': appAnalytics.newUsers,
-    'Active Users': appAnalytics.activeUsers,
-    'Property Views': appAnalytics.propertyViews,
-    'Conversion Rate': appAnalytics.conversionRate,
-    'Click Through Rate': appAnalytics.clickThroughRate,
-    'Top Property': appAnalytics.topProperty,
-    'Top Location': appAnalytics.topLocation,
-    'Top Revenue': appAnalytics.topRevenue
-  };
-}
-
-// Transform app role format to Airtable format
-export function transformRoleForAirtable(appRole) {
-  return {
-    'User ID': appRole.userId,
-    Email: appRole.email,
-    Role: appRole.role,
-    Permissions: appRole.permissions,
-    Status: appRole.status,
-    'Assigned Date': appRole.assignedDate,
-    'Assigned By': appRole.assignedBy
-  };
-}
+// NOTE: Removed transform functions for non-existent tables:
+// - transformBookingForAirtable (Bookings table doesn't exist)
+// - transformAnalyticsForAirtable (Analytics table doesn't exist)  
+// - transformRoleForAirtable (Roles table doesn't exist)
 
 // Transform multiple records
 export function transformProperties(airtableRecords) {
@@ -465,17 +241,10 @@ export function transformUsers(airtableRecords) {
   return airtableRecords.map(transformUser);
 }
 
-export function transformBookings(airtableRecords) {
-  return airtableRecords.map(transformBooking);
-}
-
-export function transformAnalyticsData(airtableRecords) {
-  return airtableRecords.map(transformAnalytics);
-}
-
-export function transformRoles(airtableRecords) {
-  return airtableRecords.map(transformRole);
-}
+// NOTE: Removed bulk transformation functions for non-existent tables:
+// - transformBookings (Bookings table doesn't exist)
+// - transformAnalyticsData (Analytics table doesn't exist)
+// - transformRoles (Roles table doesn't exist)
 
 // Note: getFieldValue is now imported from fieldMappings.js
 // Keeping this as a legacy fallback for any old code
@@ -533,52 +302,10 @@ export function validateUser(user) {
   }
 }
 
-export function validateBooking(booking) {
-  try {
-    validateRecord(booking, BOOKINGS_FIELD_MAPPING, 'booking');
-    
-    // Additional custom validations
-    if (booking.checkInDate && booking.checkOutDate) {
-      const checkIn = new Date(booking.checkInDate);
-      const checkOut = new Date(booking.checkOutDate);
-      if (checkOut <= checkIn) {
-        throw new Error('Check-out date must be after check-in date');
-      }
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Booking validation failed:', error);
-    throw error;
-  }
-}
-
-export function validateAnalytics(analytics) {
-  try {
-    validateRecord(analytics, ANALYTICS_FIELD_MAPPING, 'analytics');
-    return true;
-  } catch (error) {
-    console.error('Analytics validation failed:', error);
-    throw error;
-  }
-}
-
-export function validateRole(role) {
-  try {
-    validateRecord(role, ROLES_FIELD_MAPPING, 'role');
-    
-    // Additional custom validations
-    const validRoles = ['User', 'Admin', 'AI', 'Agent', 'VA'];
-    if (role.role && !validRoles.includes(role.role)) {
-      throw new Error(`Invalid role: ${role.role}. Must be one of: ${validRoles.join(', ')}`);
-    }
-    
-    return true;
-  } catch (error) {
-    console.error('Role validation failed:', error);
-    throw error;
-  }
-}
+// NOTE: Validation functions removed for non-existent tables:
+// - validateBooking (Bookings table doesn't exist)
+// - validateAnalytics (Analytics table doesn't exist)
+// - validateRole (Roles table doesn't exist)
 
 // Enhanced transformation and validation utilities
 export const TRANSFORM_CONFIG = {
@@ -587,49 +314,44 @@ export const TRANSFORM_CONFIG = {
   fallbackToBasicTransform: true // Set to false to throw errors instead of falling back
 };
 
-// Generic transformation function
+// Generic transformation function - only includes tables that exist
 export function transformRecord(airtableRecord, recordType) {
   const transformers = {
     property: transformProperty,
-    user: transformUser,
-    booking: transformBooking,
-    analytics: transformAnalytics,
-    role: transformRole
+    user: transformUser
+    // NOTE: Removed booking, analytics, role transformers - tables don't exist
   };
   
   const transformer = transformers[recordType.toLowerCase()];
   if (!transformer) {
-    throw new Error(`No transformer found for record type: ${recordType}`);
+    throw new Error(`No transformer found for record type: ${recordType}. Available types: ${Object.keys(transformers).join(', ')}`);
   }
   
   return transformer(airtableRecord);
 }
 
-// Generic validation function
+// Generic validation function - only includes tables that exist
 export function validateTransformedRecord(record, recordType) {
   const validators = {
     property: validateProperty,
-    user: validateUser,
-    booking: validateBooking,
-    analytics: validateAnalytics,
-    role: validateRole
+    user: validateUser
+    // NOTE: Removed booking, analytics, role validators - tables don't exist
   };
   
   const validator = validators[recordType.toLowerCase()];
   if (!validator) {
-    throw new Error(`No validator found for record type: ${recordType}`);
+    throw new Error(`No validator found for record type: ${recordType}. Available types: ${Object.keys(validators).join(', ')}`);
   }
   
   return validator(record);
 }
 
-// Export field mappings for external use
+// Export field mappings for external use - only includes existing tables
 export {
   PROPERTIES_FIELD_MAPPING,
   USERS_FIELD_MAPPING,
-  BOOKINGS_FIELD_MAPPING,
-  ANALYTICS_FIELD_MAPPING,
-  ROLES_FIELD_MAPPING,
   getFieldValue,
   validateRecord
+  // NOTE: Removed BOOKINGS_FIELD_MAPPING, ANALYTICS_FIELD_MAPPING, ROLES_FIELD_MAPPING exports
+  // as these tables don't exist in the user's Airtable base
 } from '../config/fieldMappings.js';
