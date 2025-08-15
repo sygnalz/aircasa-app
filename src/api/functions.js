@@ -1,10 +1,12 @@
 // aircasa-app/src/api/functions.js
-import { propertiesService, usersService, bookingsService, analyticsService } from '@/lib/airtableClient';
+import { propertiesService, usersService } from '@/lib/airtableClient';
+
+// NOTE: Removed imports for services that don't exist:
+// - bookingsService (Bookings table doesn't exist)
+// - analyticsService (Analytics table doesn't exist)
 import { 
   transformProperties, 
   transformUsers, 
-  transformBookings, 
-  transformAnalyticsData,
   transformProperty,
   transformUser,
   transformPropertyForAirtable,
@@ -12,6 +14,10 @@ import {
   validateProperty,
   validateUser
 } from '@/lib/dataTransformers';
+
+// NOTE: Removed imports for functions that don't exist anymore:
+// - transformBookings (Bookings table doesn't exist)
+// - transformAnalyticsData (Analytics table doesn't exist)
 
 /* -------------------- Properties -------------------- */
 export const properties = {
@@ -209,123 +215,58 @@ export const users = {
 };
 
 /* -------------------- Bookings -------------------- */
+// NOTE: Bookings functions commented out - Bookings table doesn't exist in user's Airtable base
 export const bookings = {
-  // Get all bookings
+  // Placeholder functions that return mock data since Bookings table doesn't exist
   async list(options = {}) {
-    try {
-      const airtableRecords = await bookingsService.getAll({
-        maxRecords: options.limit || 100,
-        sort: options.sort,
-        filterByFormula: options.filter,
-        ...options
-      });
-      
-      const transformedBookings = transformBookings(airtableRecords);
-      
-      return {
-        items: transformedBookings,
-        total: transformedBookings.length,
-        page: options.page || 1,
-        limit: options.limit || 100
-      };
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
-      throw error;
-    }
+    console.warn('Bookings table does not exist - returning mock data');
+    return {
+      items: [],
+      total: 0,
+      page: options.page || 1,
+      limit: options.limit || 100
+    };
   },
 
-  // Get bookings by property ID
   async getByProperty(propertyId) {
-    try {
-      const airtableRecords = await bookingsService.getAll({
-        filterByFormula: `{Property ID} = '${propertyId}'`
-      });
-      return transformBookings(airtableRecords);
-    } catch (error) {
-      console.error('Error fetching bookings by property:', error);
-      throw error;
-    }
+    console.warn('Bookings table does not exist - returning mock data');
+    return [];
   },
 
-  // Get bookings by guest email
   async getByGuest(guestEmail) {
-    try {
-      const airtableRecords = await bookingsService.getAll({
-        filterByFormula: `{Guest Email} = '${guestEmail}'`
-      });
-      return transformBookings(airtableRecords);
-    } catch (error) {
-      console.error('Error fetching bookings by guest:', error);
-      throw error;
-    }
+    console.warn('Bookings table does not exist - returning mock data');
+    return [];
   },
 
-  // Get upcoming bookings
   async getUpcoming() {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const airtableRecords = await bookingsService.getAll({
-        filterByFormula: `IS_AFTER({Check-in Date}, '${today}')`
-      });
-      return transformBookings(airtableRecords);
-    } catch (error) {
-      console.error('Error fetching upcoming bookings:', error);
-      throw error;
-    }
+    console.warn('Bookings table does not exist - returning mock data');
+    return [];
   }
 };
 
 /* -------------------- Analytics -------------------- */
+// NOTE: Analytics section commented out - Analytics table doesn't exist in user's Airtable base
 export const analytics = {
-  // Get analytics data
+  // Placeholder functions that return mock data since Analytics table doesn't exist
   async getData(options = {}) {
-    try {
-      const airtableRecords = await analyticsService.getAll({
-        maxRecords: options.limit || 12,
-        ...options
-      });
-      
-      return transformAnalyticsData(airtableRecords);
-    } catch (error) {
-      console.error('Error fetching analytics:', error);
-      throw error;
-    }
+    console.warn('Analytics table does not exist - returning mock data');
+    return [];
   },
 
-  // Get dashboard stats
+  // Get dashboard stats - returns mock data since Analytics table doesn't exist
   async getDashboardStats() {
-    try {
-      // Get latest analytics record
-      const latestAnalytics = await analyticsService.getAll({
-        maxRecords: 1
-      });
-
-      if (latestAnalytics.length === 0) {
-        return {
-          totalRevenue: 0,
-          totalBookings: 0,
-          occupancyRate: 0,
-          averageDailyRate: 0
-        };
-      }
-
-      const latest = transformAnalyticsData(latestAnalytics)[0];
-      
-      return {
-        totalRevenue: latest.totalRevenue,
-        totalBookings: latest.totalBookings,
-        occupancyRate: latest.occupancyRate,
-        averageDailyRate: latest.averageDailyRate,
-        newUsers: latest.newUsers,
-        propertyViews: latest.propertyViews,
-        conversionRate: latest.conversionRate,
-        topProperty: latest.topProperty,
-        topLocation: latest.topLocation
-      };
-    } catch (error) {
-      console.error('Error fetching dashboard stats:', error);
-      throw error;
-    }
+    console.warn('Analytics table does not exist - returning mock dashboard stats');
+    return {
+      totalRevenue: 0,
+      totalBookings: 0,
+      occupancyRate: 0,
+      averageDailyRate: 0,
+      newUsers: 0,
+      propertyViews: 0,
+      conversionRate: 0,
+      topProperty: 'N/A',
+      topLocation: 'N/A'
+    };
   }
 };
 
