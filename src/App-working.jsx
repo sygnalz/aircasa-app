@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import Dashboard from '@/pages/Dashboard-simple';
 import Properties from '@/pages/Properties';
+import AirtableSetupPage from '@/pages/AirtableSetupPage';
 
 // Demo user for the working version
 const demoUser = {
@@ -44,6 +45,19 @@ function WelcomePage({ onEnterDemo }) {
           </svg>
           Enter Demo Platform
         </button>
+
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <h3 className="font-semibold text-blue-800 mb-2">🔗 Ready for Your Airtable Data!</h3>
+          <p className="text-sm text-blue-700 mb-3">
+            Connect your existing 5-table Airtable base to see your real data
+          </p>
+          <button 
+            onClick={() => window.open('/airtable-setup', '_blank')}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded font-medium hover:bg-blue-700 transition-colors text-sm"
+          >
+            🔧 Connect My Airtable Base
+          </button>
+        </div>
 
         <div className="bg-gray-50 rounded-lg p-4">
           <h3 className="font-semibold mb-3 text-gray-800">🚀 Features Implemented:</h3>
@@ -92,6 +106,7 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/properties" element={<Properties />} />
+        <Route path="/airtable-setup" element={<AirtableSetupPage />} />
       </Routes>
     </AppLayout>
   );
