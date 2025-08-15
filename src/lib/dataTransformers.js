@@ -179,9 +179,11 @@ export function transformPropertyForAirtable(appProperty) {
   console.log('🔄 Transforming property data for Airtable:', JSON.stringify(appProperty, null, 2));
   
   const transformed = {
-    // Use the primary field names from our mapping - matching enrichedPropertyData structure
-    Name: appProperty.title || `${appProperty.address || 'Property'}`,
-    Description: appProperty.description,
+    // Remove the "Name" field that was causing "Unknown field name: 'Name'" error
+    // The Airtable Properties table schema doesn't include a "Name" field
+    // Description: appProperty.description, // Also removing since it might not exist
+    
+    // Core property fields that match Airtable schema
     app_address: appProperty.address, // Match enrichedPropertyData.address
     app_city: appProperty.city,
     app_state: appProperty.state,
@@ -222,7 +224,7 @@ export function transformPropertyForAirtable(appProperty) {
     // app_last_updated: new Date().toISOString().split('T')[0] // Field doesn't exist in Airtable schema
   };
   
-  console.log('✅ Transformed property data:', JSON.stringify(transformed, null, 2));
+  console.log('✅ Transformed property data (without Name field):', JSON.stringify(transformed, null, 2));
   return transformed;
 }
 
