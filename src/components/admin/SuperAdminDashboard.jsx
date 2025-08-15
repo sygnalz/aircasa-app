@@ -8,7 +8,7 @@ const createPageUrl = (pageName) => {
 import { User, Home, MessageSquare, BarChart, Settings, Users, Briefcase, Eye } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getAdminDashboardStats } from "../../api/functions/getAdminDashboardStats.js";
+import { getAdminDashboardStats } from "@/api/functions/getAdminDashboardStats.js";
 
 export default function SuperAdminDashboard() {
   const [stats, setStats] = useState({ totalUsers: '...', totalProperties: '...', activeConversations: '...' });
