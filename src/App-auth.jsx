@@ -4,7 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import RoleBasedLayout from './components/layout/RoleBasedLayout';
 import LoginPage from './components/auth/LoginPage';
 import DashboardRouter from './components/dashboard/DashboardRouter';
-import Properties from './pages/Properties';
+import Properties from './pages/Properties-minimal';
 import AirtableSetupPage from './pages/AirtableSetupPage';
 import AirtableDebug from './pages/AirtableDebug';
 import { 

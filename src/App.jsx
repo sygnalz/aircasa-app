@@ -6,8 +6,9 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import Auth from '@/pages/Auth.jsx';
 import Home from '@/pages/index.jsx';
 import Dashboard from '@/pages/Dashboard.jsx';
-import Properties from '@/pages/Properties.jsx';
+import Properties from '@/pages/Properties-minimal.jsx';
 import AirtableDebug from '@/pages/AirtableDebug.jsx';
+import { UserRoute } from './components/auth/ProtectedRoute';
 
 function AuthGate({ children }) {
   const [loading, setLoading] = useState(true);
