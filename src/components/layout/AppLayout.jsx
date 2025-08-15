@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, Fragment } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/lib/supabaseClient';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -25,21 +25,33 @@ import {
   Search,
 } from 'lucide-react';
 
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Properties', href: '/properties', icon: Building2 },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Settings', href: '/settings', icon: Settings },
-];
+// Dynamic navigation based on role (passed as props)
+const getIconComponent = (iconName) => {
+  const icons = {
+    Home,
+    Building: Building2,
+    Building2,
+    BarChart3,
+    Settings,
+    User,
+    Bell,
+    Search,
+    Menu,
+    LogOut
+  };
+  return icons[iconName] || Home;
+};
 
-export function AppLayout({ user }) {
+export function AppLayout({ user, navigationItems, userMenuItems, roleInfo, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
+  const { signOut } = useAuth();
+  
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
+    await signOut();
+    navigate('/login');
   };
 
   const NavLink = ({ item }) => {
@@ -76,10 +88,22 @@ export function AppLayout({ user }) {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-4">
-        {navigation.map((item) => (
-          <NavLink key={item.name} item={item} />
-        ))}
+        {navigationItems && navigationItems.map((item) => {
+          const ItemIcon = getIconComponent(item.icon);
+          return (
+            <NavLink key={item.name} item={{...item, icon: ItemIcon}} />
+          );
+        })}
       </nav>
+      
+      {/* Role Badge */}
+      {roleInfo && (
+        <div className="px-4 pb-4">
+          <div className={`px-3 py-2 rounded-lg text-xs font-medium text-center bg-${roleInfo.color}-100 text-${roleInfo.color}-800`}>
+            {roleInfo.displayName}
+          </div>
+        </div>
+      )}
 
       {/* User Profile */}
       <div className="p-4 border-t">
@@ -97,6 +121,11 @@ export function AppLayout({ user }) {
             <p className="text-xs text-muted-foreground truncate">
               {user?.email}
             </p>
+            {roleInfo && (
+              <p className={`text-xs font-medium text-${roleInfo.color}-600`}>
+                {roleInfo.displayName}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -175,22 +204,28 @@ export function AppLayout({ user }) {
                     <p className="text-xs leading-none text-muted-foreground">
                       {user?.email}
                     </p>
+                    {roleInfo && (
+                      <p className={`text-xs font-medium text-${roleInfo.color}-600`}>
+                        {roleInfo.displayName}
+                      </p>
+                    )}
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sign out
-                </DropdownMenuItem>
+                {userMenuItems && userMenuItems.map((item, index) => {
+                  const ItemIcon = getIconComponent(item.icon);
+                  return (
+                    <Fragment key={item.name}>
+                      <DropdownMenuItem 
+                        onClick={item.action ? item.action : () => navigate(item.href)}
+                      >
+                        <ItemIcon className="mr-2 h-4 w-4" />
+                        {item.name}
+                      </DropdownMenuItem>
+                      {item.name === 'Settings' && <DropdownMenuSeparator />}
+                    </Fragment>
+                  );
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -199,7 +234,7 @@ export function AppLayout({ user }) {
         {/* Page Content */}
         <main className="py-8">
           <div className="px-4 sm:px-6 lg:px-8">
-            <Outlet />
+            {children || <Outlet />}
           </div>
         </main>
       </div>

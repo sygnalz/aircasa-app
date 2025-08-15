@@ -3,7 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Home, Users, Calendar, DollarSign, MapPin, FileText } from "lucide-react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+// Utility function for creating page URLs
+const createPageUrl = (pageName) => {
+  return '/' + pageName.toLowerCase().replace(/ /g, '-');
+};
 
 export default function AgentDashboard({ user }) {
   const [stats, setStats] = useState({
