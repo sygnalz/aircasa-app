@@ -17,6 +17,9 @@ export const zillowService = {
     const url = `https://${host}/pro/byaddress?propertyaddress=${encodeURIComponent(address)}`;
 
     console.log('🏠 Verifying address with Zillow:', address);
+    console.log('🔑 API Key:', rapidAPIKey ? `${rapidAPIKey.substring(0, 10)}...` : 'MISSING');
+    console.log('🏢 Host:', host);
+    console.log('🌐 Full URL:', url);
 
     try {
       const response = await fetch(url, {
@@ -25,29 +28,56 @@ export const zillowService = {
       });
 
       if (!response.ok) {
-        throw new Error(`Zillow API error: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('❌ Zillow API Error Response:', errorText);
+        throw new Error(`Zillow API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
-      console.log('✅ Zillow address verification successful:', data);
+      console.log('✅ Zillow address verification successful - Full API Response:', JSON.stringify(data, null, 2));
+      
+      // Validate that we have the expected response structure
+      if (!data || !data.propertyDetails) {
+        throw new Error("Could not find property details for this address. API response structure unexpected.");
+      }
+
+      const details = data.propertyDetails;
+      let zpid = details.zpid;
+      
+      // Handle address properly - it might be an object or string
+      let formattedAddress = address;
+      if (details.address) {
+        if (typeof details.address === 'string') {
+          formattedAddress = details.address;
+        } else if (typeof details.address === 'object') {
+          // Construct address from object parts
+          const addr = details.address;
+          formattedAddress = [
+            addr.streetAddress,
+            addr.city,
+            addr.state,
+            addr.zipcode
+          ].filter(Boolean).join(', ');
+        }
+      }
       
       return {
         success: true,
         data: data,
-        zpid: data.zpid,
+        zpid: zpid,
         propertyData: {
-          address: data.address || address,
-          city: data.city || '',
-          state: data.state || '',
-          zipcode: data.zipcode || '',
-          price: data.price || data.zestimate || null,
-          bedrooms: data.bedrooms || null,
-          bathrooms: data.bathrooms || null,
-          sqft: data.livingArea || data.homeSize || null,
-          yearBuilt: data.yearBuilt || null,
-          propertyType: data.homeType || 'Single Family',
-          images: data.images || [],
-          description: data.description || ''
+          address: formattedAddress,
+          city: details.city || '',
+          state: details.state || '', 
+          zipcode: details.zipcode || '',
+          price: details.price || details.zestimate || null,
+          bedrooms: details.resoFacts?.bedrooms || details.bedrooms || null,
+          bathrooms: details.resoFacts?.bathrooms || details.bathrooms || null,
+          sqft: parseInt(details.resoFacts?.aboveGradeFinishedArea?.replace(/,/g, '') || details.livingArea || details.homeSize || 0) || null,
+          yearBuilt: details.resoFacts?.atAGlanceFacts?.find(fact => fact.factLabel === 'Year Built')?.factValue || details.yearBuilt || null,
+          propertyType: details.resoFacts?.homeType || details.homeType || 'Single Family',
+          images: details.photos || details.images || [],
+          description: details.description || ''
         }
       };
     } catch (error) {
@@ -213,7 +243,7 @@ export const propertyEnrichmentService = {
       verificationSource: zillowData?.zpid ? 'Zillow' : 'User Input'
     };
 
-    console.log('🔄 Property data enriched:', enriched);
+    console.log('🔄 Property data enriched:', JSON.stringify(enriched, null, 2));
     return enriched;
   },
 

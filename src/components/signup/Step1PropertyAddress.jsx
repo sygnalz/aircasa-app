@@ -122,9 +122,11 @@ export default function Step1PropertyAddress({ onNext, initialData }) {
     
     try {
       console.log("🔍 Verifying address with Zillow:", address.trim());
+      console.log("🔧 zillowService available:", !!zillowService);
       
       // Call Zillow API to verify address
       const zillowResult = await zillowService.verifyAddress(address.trim());
+      console.log("📊 Zillow verification result:", zillowResult);
       
       if (zillowResult.success) {
         console.log("✅ Address verified successfully");

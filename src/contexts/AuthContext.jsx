@@ -147,7 +147,7 @@ export function AuthProvider({ children }) {
         
         console.log('✅ User authenticated:', {
           email: authUser.email,
-          roles,
+          roles: normalizedRoles,
           primaryRole: primary
         });
       } else {

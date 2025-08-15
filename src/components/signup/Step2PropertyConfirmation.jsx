@@ -28,17 +28,20 @@ export default function Step2PropertyConfirmation({ onNext, onBack, signupData }
         // Check if we already have Zillow verification from Step 1
         if (signupData.zillow_verification?.success) {
           console.log('✅ Using Zillow data from Step 1');
-          zillowData = signupData.zillow_verification.data;
+          const zillowResult = signupData.zillow_verification;
+          zillowData = zillowResult.propertyData; // Use the propertyData from the parsed result
           
           // Get additional details if we have zpid
-          if (zillowData.zpid) {
+          if (zillowResult.zpid) {
             console.log('🔍 Fetching additional Zillow details...');
-            const additionalDetails = await zillowService.getPropertyDetails(zillowData.zpid);
+            const additionalDetails = await zillowService.getPropertyDetails(zillowResult.zpid);
             if (additionalDetails.success) {
-              // Merge additional data
+              // Merge additional data into propertyData
               zillowData = {
                 ...zillowData,
-                ...additionalDetails
+                zestimate: additionalDetails.zestimate,
+                images: additionalDetails.images || zillowData.images,
+                priceHistory: additionalDetails.priceHistory
               };
             }
           }
@@ -71,7 +74,7 @@ export default function Step2PropertyConfirmation({ onNext, onBack, signupData }
           ...signupData.address_components
         };
 
-        enrichedData = propertyEnrichmentService.enrichPropertyData(userData, zillowData?.propertyData);
+        enrichedData = propertyEnrichmentService.enrichPropertyData(userData, zillowData);
 
         // Format for display
         const formattedData = {
@@ -94,7 +97,7 @@ export default function Step2PropertyConfirmation({ onNext, onBack, signupData }
           zip_code: enrichedData.zipcode || signupData.address_components?.zipcode || ""
         };
 
-        console.log('📊 Final formatted property data:', formattedData);
+        console.log('📊 Final formatted property data:', JSON.stringify(formattedData, null, 2));
         setPropertyData(formattedData);
 
       } catch (err) {

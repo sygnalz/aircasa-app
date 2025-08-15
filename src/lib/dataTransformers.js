@@ -199,7 +199,7 @@ export function transformPropertyForAirtable(appProperty) {
     app_amenities: appProperty.amenities,
     app_email: appProperty.ownerEmail,
     app_owner_user_id: appProperty.app_owner_user_id,
-    app_last_updated: new Date().toISOString().split('T')[0] // YYYY-MM-DD format
+    // app_last_updated: new Date().toISOString().split('T')[0] // Field doesn't exist in Airtable schema
   };
 }
 
