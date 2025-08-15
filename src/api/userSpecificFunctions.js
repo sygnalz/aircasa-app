@@ -33,6 +33,15 @@ export const userSpecificAPI = {
       
       // Filter properties that belong to this user
       const userProperties = allProperties.filter(property => {
+        console.log('🔍 Checking property:', {
+          id: property.id,
+          title: property.title,
+          ownerEmail: property.ownerEmail,
+          app_email: property.app_email,
+          app_owner_user_id: property.app_owner_user_id,
+          checkingAgainst: { userEmail, userId }
+        });
+        
         const matchesEmail = (
           property.ownerEmail === userEmail ||
           property.app_email === userEmail ||
@@ -45,7 +54,12 @@ export const userSpecificAPI = {
           property.user_id === userId
         );
         
-        return matchesEmail || matchesUserId;
+        const isMatch = matchesEmail || matchesUserId;
+        if (isMatch) {
+          console.log('✅ Found matching property:', property.title, 'for user:', userEmail);
+        }
+        
+        return isMatch;
       });
       
       console.log(`✅ Found ${userProperties.length} properties for user ${userEmail} via client-side filtering`);

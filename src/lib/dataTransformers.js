@@ -23,7 +23,9 @@ export function transformProperty(airtableRecord) {
     amenities: Array.isArray(airtableRecord.Amenities)
       ? airtableRecord.Amenities
       : airtableRecord.amenities || [],
-    ownerEmail: airtableRecord['Owner Email'] || airtableRecord.ownerEmail,
+    ownerEmail: airtableRecord['Owner Email'] || airtableRecord.ownerEmail || airtableRecord.app_email,
+    app_email: airtableRecord.app_email,
+    app_owner_user_id: airtableRecord.app_owner_user_id,
     createdDate: airtableRecord['Created Date'] || airtableRecord.createdDate,
     lastUpdated: airtableRecord['Last Updated'] || airtableRecord.lastUpdated,
     _createdTime: airtableRecord._createdTime

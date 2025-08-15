@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { properties } from '@/api/functions';
 import { userSpecificAPI } from '../api/userSpecificFunctions';
 import { useAuth } from '../contexts/AuthContext';
+import { debugUserProperties } from '../utils/debugProperties';
 import PropertyCard from '@/components/properties/PropertyCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -151,15 +152,35 @@ export default function PropertiesPage() {
       // Fallback: try to load all properties and filter client-side
       try {
         console.log('🔄 Trying fallback method...');
+        
+        // Debug: Check what's actually in the Properties table
+        await debugUserProperties(user.email);
+        
         const data = await properties.list();
         if (data?.items && Array.isArray(data.items)) {
           // Filter properties for current user
           const filteredProperties = data.items.filter(property => {
-            return (
+            console.log('🔍 Filtering property:', {
+              id: property.id,
+              title: property.title,
+              ownerEmail: property.ownerEmail,
+              app_email: property.app_email,
+              app_owner_user_id: property.app_owner_user_id,
+              userEmail: user.email,
+              userId: user.id
+            });
+            
+            const matches = (
               property.ownerEmail === user.email ||
-              property.app_owner_user_id === user.id ||
-              property.app_email === user.email
+              property.app_email === user.email ||
+              property.app_owner_user_id === user.id
             );
+            
+            if (matches) {
+              console.log('✅ Property matches user:', property.title);
+            }
+            
+            return matches;
           });
           console.log(`✅ Fallback: Found ${filteredProperties.length} properties for user`);
           setItems(filteredProperties);
