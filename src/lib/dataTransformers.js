@@ -2,11 +2,17 @@
 
 // Transform Airtable property record to app format
 export function transformProperty(airtableRecord) {
+  console.log('🔄 Transforming Airtable record:', {
+    id: airtableRecord.id,
+    availableFields: Object.keys(airtableRecord).slice(0, 10),
+    totalFields: Object.keys(airtableRecord).length
+  });
+  
   return {
     id: airtableRecord.id,
-    title: airtableRecord.Name || airtableRecord.title,
-    description: airtableRecord.Description || '',
-    location: airtableRecord.Location || airtableRecord.location,
+    title: airtableRecord.Name || airtableRecord.title || airtableRecord.app_name || airtableRecord.property_name || 'Untitled Property',
+    description: airtableRecord.Description || airtableRecord.description || '',
+    location: airtableRecord.Location || airtableRecord.location || airtableRecord.app_address || airtableRecord.address || '',
     price: airtableRecord['Price per Night'] || airtableRecord.price || 0,
     bedrooms: airtableRecord.Bedrooms || airtableRecord.bedrooms || 0,
     bathrooms: airtableRecord.Bathrooms || airtableRecord.bathrooms || 0,
