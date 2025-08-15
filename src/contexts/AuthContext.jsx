@@ -131,11 +131,18 @@ export function AuthProvider({ children }) {
       setUserProfile(profile);
       
       if (profile) {
-        const roles = Array.isArray(profile.role) ? profile.role : [profile.role].filter(Boolean);
-        setUserRoles(roles);
+        const rawRoles = Array.isArray(profile.role) ? profile.role : [profile.role].filter(Boolean);
+        
+        // Normalize roles to proper case (User, Admin, Agent, VA, AI)
+        const normalizedRoles = rawRoles.map(role => {
+          const roleStr = String(role);
+          return roleStr.charAt(0).toUpperCase() + roleStr.slice(1).toLowerCase();
+        });
+        
+        setUserRoles(normalizedRoles);
         
         // Determine primary role (highest priority)
-        const primary = determinePrimaryRole(roles);
+        const primary = determinePrimaryRole(normalizedRoles);
         setPrimaryRole(primary);
         
         console.log('✅ User authenticated:', {
@@ -273,7 +280,10 @@ export function AuthProvider({ children }) {
 
   // Role and permission helpers
   const hasRole = (role) => {
-    return userRoles.includes(role);
+    // Case-insensitive role checking
+    return userRoles.some(userRole => 
+      userRole.toLowerCase() === role.toLowerCase()
+    );
   };
 
   const hasPermission = (permission) => {
