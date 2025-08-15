@@ -49,13 +49,31 @@ export class AirtableService {
 
     try {
       const records = [];
-      await this.table.select({
-        maxRecords: options.maxRecords || 100,
-        view: options.view || 'Grid view',
-        filterByFormula: options.filterByFormula,
-        sort: options.sort,
-        ...options
-      }).eachPage((pageRecords, fetchNextPage) => {
+      const selectOptions = {};
+      
+      // Only add maxRecords if explicitly provided
+      if (options.maxRecords && typeof options.maxRecords === 'number') {
+        selectOptions.maxRecords = options.maxRecords;
+      }
+      
+      // Only add view if explicitly provided and valid
+      if (options.view && typeof options.view === 'string') {
+        selectOptions.view = options.view;
+      }
+      
+      // Only add filterByFormula if it's a valid string
+      if (options.filterByFormula && typeof options.filterByFormula === 'string') {
+        selectOptions.filterByFormula = options.filterByFormula;
+      }
+      
+      // Only add sort if it's a valid array
+      if (options.sort && Array.isArray(options.sort) && options.sort.length > 0) {
+        selectOptions.sort = options.sort;
+      }
+      
+      console.log(`🔍 Airtable ${this.tableName} query options:`, selectOptions);
+      
+      await this.table.select(selectOptions).eachPage((pageRecords, fetchNextPage) => {
         records.push(...pageRecords.map(record => ({
           id: record.id,
           ...record.fields,

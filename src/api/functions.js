@@ -20,7 +20,7 @@ export const properties = {
     try {
       const airtableRecords = await propertiesService.getAll({
         maxRecords: options.limit || 100,
-        sort: options.sort || [{ field: 'Name', direction: 'asc' }],
+        sort: options.sort,
         filterByFormula: options.filter,
         ...options
       });
@@ -121,7 +121,7 @@ export const users = {
     try {
       const airtableRecords = await usersService.getAll({
         maxRecords: options.limit || 100,
-        sort: options.sort || [{ field: 'Full Name', direction: 'asc' }],
+        sort: options.sort,
         filterByFormula: options.filter,
         ...options
       });
@@ -215,7 +215,7 @@ export const bookings = {
     try {
       const airtableRecords = await bookingsService.getAll({
         maxRecords: options.limit || 100,
-        sort: options.sort || [{ field: 'Booking Date', direction: 'desc' }],
+        sort: options.sort,
         filterByFormula: options.filter,
         ...options
       });
@@ -282,7 +282,6 @@ export const analytics = {
     try {
       const airtableRecords = await analyticsService.getAll({
         maxRecords: options.limit || 12,
-        sort: [{ field: 'Date', direction: 'desc' }],
         ...options
       });
       
@@ -298,8 +297,7 @@ export const analytics = {
     try {
       // Get latest analytics record
       const latestAnalytics = await analyticsService.getAll({
-        maxRecords: 1,
-        sort: [{ field: 'Date', direction: 'desc' }]
+        maxRecords: 1
       });
 
       if (latestAnalytics.length === 0) {

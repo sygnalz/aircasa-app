@@ -3,6 +3,7 @@ import { properties } from '@/api/functions';
 import { userSpecificAPI } from '../api/userSpecificFunctions';
 import { useAuth } from '../contexts/AuthContext';
 import { debugUserProperties } from '../utils/debugProperties';
+import { testAirtableConnection } from '../utils/testAirtable';
 import PropertyCard from '@/components/properties/PropertyCard';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -154,6 +155,10 @@ export default function PropertiesPage() {
         console.log('🔄 Trying fallback method...');
         
         // Debug: Check what's actually in the Properties table
+        console.log('🧪 Testing direct Airtable connection...');
+        const airtableTest = await testAirtableConnection();
+        
+        console.log('🔍 Running debug for user properties...');
         await debugUserProperties(user.email);
         
         const data = await properties.list();
