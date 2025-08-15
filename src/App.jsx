@@ -7,6 +7,7 @@ import Auth from '@/pages/Auth.jsx';
 import Home from '@/pages/index.jsx';
 import Dashboard from '@/pages/Dashboard.jsx';
 import Properties from '@/pages/Properties.jsx';
+import PropertyDetails from '@/pages/PropertyDetails.jsx';
 import AirtableDebug from '@/pages/AirtableDebug.jsx';
 import { UserRoute } from './components/auth/ProtectedRoute';
 
@@ -192,6 +193,7 @@ export default function App() {
       <Route element={<ProtectedShell />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/properties" element={<Properties />} />
+        <Route path="/property/:propertyId" element={<PropertyDetails />} />
         <Route path="/airtable-debug" element={<AirtableDebug />} />
       </Route>
 
