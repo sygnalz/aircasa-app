@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { properties, analytics } from '@/api/functions';
+import { userSpecificAPI } from '../api/userSpecificFunctions';
+import { useAuth } from '../contexts/AuthContext';
 import {
   CalendarDays,
   TrendingUp,
@@ -15,6 +17,10 @@ import {
   Zap,
   DollarSign,
   ArrowUpRight,
+  Shield,
+  Briefcase,
+  Headphones,
+  ExternalLink,
 } from 'lucide-react';
 
 const StatCard = ({ title, value, description, trend, trendValue, icon: Icon }) => {
@@ -43,33 +49,40 @@ const StatCard = ({ title, value, description, trend, trendValue, icon: Icon }) 
   );
 };
 
-const QuickActions = () => {
-  const actions = [
+const QuickActions = ({ actions = [], loading = false }) => {
+  // Default actions if none provided
+  const defaultActions = [
     {
       title: 'Add New Property',
       description: 'List a new property for rental',
       icon: Plus,
       color: 'bg-primary text-primary-foreground',
+      href: '/properties/add'
     },
     {
       title: 'View Analytics',
       description: 'Check performance metrics',
       icon: TrendingUp,
       color: 'bg-green-500 text-white',
+      href: '/analytics'
     },
     {
       title: 'Manage Bookings',
       description: 'Review upcoming reservations',
       icon: CalendarDays,
       color: 'bg-blue-500 text-white',
+      href: '/bookings'
     },
     {
       title: 'Guest Messages',
       description: 'Respond to guest inquiries',
       icon: Users,
       color: 'bg-purple-500 text-white',
+      href: '/messages'
     },
   ];
+
+  const displayActions = actions.length > 0 ? actions : defaultActions;
 
   return (
     <Card>
@@ -81,36 +94,117 @@ const QuickActions = () => {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {actions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <div
-                key={action.title}
-                className="group flex items-center space-x-4 p-4 rounded-lg border hover:shadow-md transition-all cursor-pointer hover:border-primary/50"
-              >
-                <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${action.color}`}>
-                  <Icon className="h-6 w-6" />
+          {loading ? (
+            // Loading skeleton
+            Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="animate-pulse flex items-center space-x-4 p-4 rounded-lg border">
+                <div className="h-12 w-12 bg-gray-200 rounded-lg"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-medium group-hover:text-primary transition-colors">
-                    {action.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {action.description}
-                  </p>
-                </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </div>
-            );
-          })}
+            ))
+          ) : (
+            displayActions.map((action) => {
+              // Map icon names to actual icon components
+              const getIconComponent = (iconName) => {
+                const iconMap = {
+                  'Shield': Shield,
+                  'Briefcase': Briefcase,
+                  'Headphones': Headphones,
+                  'Plus': Plus,
+                  'TrendingUp': TrendingUp,
+                  'CalendarDays': CalendarDays,
+                  'Users': Users,
+                  'Building2': Building2
+                };
+                return iconMap[iconName] || action.icon || Plus;
+              };
+              
+              const IconComponent = typeof action.icon === 'string' 
+                ? getIconComponent(action.icon)
+                : action.icon || Plus;
+              const isAdminAction = action.type === 'admin_access';
+              const isSpecialRole = ['agent_tools', 'va_tools'].includes(action.type);
+              
+              return (
+                <div
+                  key={action.title}
+                  className={`group flex items-center space-x-4 p-4 rounded-lg border hover:shadow-md transition-all cursor-pointer ${
+                    isAdminAction 
+                      ? 'hover:border-red-300 border-red-200 bg-red-50' 
+                      : isSpecialRole
+                      ? 'hover:border-indigo-300 border-indigo-200 bg-indigo-50'
+                      : 'hover:border-primary/50'
+                  }`}
+                  onClick={() => action.href && (window.location.href = action.href)}
+                >
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${
+                    action.color || 'bg-primary text-primary-foreground'
+                  }`}>
+                    <IconComponent className="h-6 w-6" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className={`font-medium transition-colors ${
+                      isAdminAction 
+                        ? 'group-hover:text-red-700 text-red-900'
+                        : 'group-hover:text-primary'
+                    }`}>
+                      {action.title}
+                      {action.count && (
+                        <Badge className="ml-2 text-xs" variant="secondary">
+                          {action.count}
+                        </Badge>
+                      )}
+                    </h3>
+                    <p className={`text-sm ${
+                      isAdminAction ? 'text-red-600' : 'text-muted-foreground'
+                    }`}>
+                      {action.description}
+                    </p>
+                  </div>
+                  {isAdminAction || isSpecialRole ? (
+                    <ExternalLink className={`h-4 w-4 transition-colors ${
+                      isAdminAction 
+                        ? 'text-red-500 group-hover:text-red-700'
+                        : 'text-indigo-500 group-hover:text-indigo-700'
+                    }`} />
+                  ) : (
+                    <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                  )}
+                </div>
+              );
+            })
+          )}
         </div>
       </CardContent>
     </Card>
   );
 };
 
-const GoalsOverview = () => {
-  const goals = [
+const GoalsOverview = ({ userStats = null, loading = false }) => {
+  // Use user-specific data if available, otherwise use defaults
+  const goals = userStats ? [
+    {
+      title: 'Property Intakes',
+      current: userStats.completedIntakes,
+      target: userStats.totalProperties || 1,
+      unit: '',
+    },
+    {
+      title: 'Consultations',
+      current: userStats.completedConsultations,
+      target: userStats.totalProperties || 1,
+      unit: '',
+    },
+    {
+      title: 'Property Photos',
+      current: userStats.completedPhotos,
+      target: userStats.totalProperties || 1,
+      unit: '',
+    },
+  ] : [
     {
       title: 'Monthly Revenue',
       current: 18500,
@@ -143,46 +237,62 @@ const GoalsOverview = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        {goals.map((goal) => {
-          const progress = (goal.current / goal.target) * 100;
-          const isCompleted = progress >= 100;
-          
-          return (
-            <div key={goal.title} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">{goal.title}</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-2xl font-bold">
-                      {goal.unit}{goal.current.toLocaleString()}
-                    </span>
-                    <span className="text-sm text-muted-foreground">
-                      / {goal.unit}{goal.target.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-                {isCompleted && (
-                  <Badge className="bg-green-100 text-green-800 border-green-200">
-                    ✓ Complete
-                  </Badge>
-                )}
-              </div>
-              <Progress value={Math.min(progress, 100)} className="h-2" />
-              <p className="text-xs text-muted-foreground">
-                {progress.toFixed(1)}% complete
-              </p>
+        {loading ? (
+          // Loading skeleton for goals
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="animate-pulse space-y-2">
+              <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+              <div className="h-2 bg-gray-200 rounded w-full"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/4"></div>
             </div>
-          );
-        })}
+          ))
+        ) : (
+          goals.map((goal) => {
+            const progress = (goal.current / goal.target) * 100;
+            const isCompleted = progress >= 100;
+            
+            return (
+              <div key={goal.title} className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">{goal.title}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl font-bold">
+                        {goal.unit}{goal.current.toLocaleString()}
+                      </span>
+                      <span className="text-sm text-muted-foreground">
+                        / {goal.unit}{goal.target.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                  {isCompleted && (
+                    <Badge className="bg-green-100 text-green-800 border-green-200">
+                      ✓ Complete
+                    </Badge>
+                  )}
+                </div>
+                <Progress value={Math.min(progress, 100)} className="h-2" />
+                <p className="text-xs text-muted-foreground">
+                  {progress.toFixed(1)}% complete
+                </p>
+              </div>
+            );
+          })
+        )}
       </CardContent>
     </Card>
   );
 };
 
-export default function Dashboard() {
+export default function Dashboard({ user }) {
+  const { userRoles, hasRole, primaryRole } = useAuth();
   const [loading, setLoading] = useState(true);
   const [propertiesData, setPropertiesData] = useState([]);
   const [analyticsData, setAnalyticsData] = useState(null);
+  const [userDashboardStats, setUserDashboardStats] = useState(null);
+  const [userQuickActions, setUserQuickActions] = useState([]);
+  const [adminAccess, setAdminAccess] = useState({ hasAdminAccess: false, roles: [] });
   const [error, setError] = useState(null);
 
   // Default stats (fallback)
@@ -197,53 +307,81 @@ export default function Dashboard() {
 
   useEffect(() => {
     const loadDashboardData = async () => {
+      if (!user?.email) {
+        console.log('⚠️ No user email provided, using fallback data');
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        console.log('📊 Loading dashboard data from Airtable...');
+        console.log(`📊 Loading personalized dashboard data for ${user.email}...`);
         
-        // Load properties and analytics in parallel
-        const [propertiesResponse, analyticsResponse] = await Promise.allSettled([
-          properties.list(),
-          analytics.getDashboardStats()
+        // Load user-specific data in parallel
+        const [propertiesResponse, analyticsResponse, userStatsResponse, quickActionsResponse, adminAccessResponse] = await Promise.allSettled([
+          properties.list(), // Fallback for overall stats
+          analytics.getDashboardStats(), // Overall analytics
+          userSpecificAPI.getUserDashboardStats(user.email, user.id), // User-specific stats
+          userSpecificAPI.getUserQuickActions(user.email, user.id), // Personalized actions
+          userSpecificAPI.checkAdminAccess(user.email, user.id) // Admin access check
         ]);
 
-        // Handle properties data
+        // Handle user-specific stats
+        if (userStatsResponse.status === 'fulfilled') {
+          const userStats = userStatsResponse.value;
+          setUserDashboardStats(userStats);
+          console.log(`✅ Loaded personalized stats for ${user.email}:`, userStats);
+          
+          // Update stats display with user-specific data
+          setStats({
+            totalProperties: { 
+              value: userStats.totalProperties.toString(),
+              trend: 'up', 
+              trendValue: userStats.totalProperties > 0 ? '+12%' : '0%', 
+              description: 'your properties' 
+            },
+            totalRevenue: { 
+              value: `$${userStats.totalEstimatedValue.toLocaleString()}`,
+              trend: 'up', 
+              trendValue: '+20.1%', 
+              description: 'estimated value' 
+            },
+            activeListings: { 
+              value: userStats.completedIntakes.toString(),
+              trend: 'up', 
+              trendValue: '+4%', 
+              description: 'completed intakes' 
+            },
+            totalViews: { 
+              value: userStats.totalConversations.toString(),
+              trend: 'up', 
+              trendValue: '+180%', 
+              description: 'conversations' 
+            },
+          });
+        } else {
+          console.warn('Failed to load user stats, using fallback');
+        }
+
+        // Handle quick actions
+        if (quickActionsResponse.status === 'fulfilled') {
+          const actions = quickActionsResponse.value;
+          setUserQuickActions(actions);
+          console.log(`✅ Loaded ${actions.length} personalized quick actions`);
+        }
+
+        // Handle admin access
+        if (adminAccessResponse.status === 'fulfilled') {
+          const access = adminAccessResponse.value;
+          setAdminAccess(access);
+          console.log(`✅ Admin access check completed:`, access);
+        }
+
+        // Handle fallback properties data
         if (propertiesResponse.status === 'fulfilled' && propertiesResponse.value?.items) {
           const props = propertiesResponse.value.items;
           setPropertiesData(props);
-          console.log(`✅ Loaded ${props.length} properties`);
-          
-          // Calculate stats from properties data
-          const activeProps = props.filter(p => p.status === 'active');
-          const totalRevenue = props.reduce((sum, p) => sum + (p.revenue || 0), 0);
-          const totalBookings = props.reduce((sum, p) => sum + (p.bookings || 0), 0);
-          
-          setStats({
-            totalProperties: { 
-              value: props.length.toString(),
-              trend: 'up', 
-              trendValue: '+12%', 
-              description: 'total properties' 
-            },
-            totalRevenue: { 
-              value: `$${totalRevenue.toLocaleString()}`,
-              trend: 'up', 
-              trendValue: '+20.1%', 
-              description: 'total revenue' 
-            },
-            activeListings: { 
-              value: activeProps.length.toString(),
-              trend: 'up', 
-              trendValue: '+4%', 
-              description: 'active listings' 
-            },
-            totalViews: { 
-              value: totalBookings.toString(),
-              trend: 'up', 
-              trendValue: '+180%', 
-              description: 'total bookings' 
-            },
-          });
+          console.log(`✅ Loaded ${props.length} total properties (fallback)`);
         }
 
         // Handle analytics data
@@ -261,7 +399,7 @@ export default function Dashboard() {
     };
 
     loadDashboardData();
-  }, []);
+  }, [user]);
 
   if (error) {
     console.warn('Dashboard error, showing default stats:', error);
@@ -273,15 +411,30 @@ export default function Dashboard() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Welcome back, Demo User!
+            Welcome back, {user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User'}!
             {loading && <span className="text-lg font-normal text-muted-foreground ml-2">(Loading...)</span>}
           </h1>
           <p className="text-muted-foreground">
             {loading 
-              ? 'Loading your property data from Airtable...' 
-              : `Here's what's happening with your ${propertiesData.length} properties today.`
+              ? 'Loading your personalized property data...' 
+              : userDashboardStats 
+              ? `Here's what's happening with your ${userDashboardStats.totalProperties} properties today.`
+              : "Here's your personalized dashboard."
             }
           </p>
+          {adminAccess.hasAdminAccess && (
+            <div className="flex items-center gap-2 mt-2">
+              <Badge className="bg-red-100 text-red-800 border-red-200">
+                <Shield className="h-3 w-3 mr-1" />
+                Admin Access Available
+              </Badge>
+              {adminAccess.roles.length > 1 && (
+                <Badge variant="outline">
+                  Multiple Roles: {adminAccess.roles.join(', ')}
+                </Badge>
+              )}
+            </div>
+          )}
           {error && (
             <p className="text-sm text-amber-600 mt-1">
               ⚠️ Note: Using demo data due to connection issue
@@ -363,14 +516,14 @@ export default function Dashboard() {
 
         {/* Goals Overview */}
         <div className="lg:col-span-3">
-          <GoalsOverview />
+          <GoalsOverview userStats={userDashboardStats} loading={loading} />
         </div>
       </div>
 
       {/* Secondary Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Quick Actions */}
-        <QuickActions />
+        <QuickActions actions={userQuickActions} loading={loading} />
 
         {/* Recent Activity Placeholder */}
         <Card>
@@ -382,22 +535,51 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {[
-                { action: 'New booking received', time: '15 minutes ago', type: 'booking' },
-                { action: 'Message from guest', time: '45 minutes ago', type: 'message' },
-                { action: 'Payment received', time: '2 hours ago', type: 'payment' },
-                { action: 'Property updated', time: '4 hours ago', type: 'update' }
-              ].map((activity, i) => (
-                <div key={i} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                    <div className="h-2 w-2 rounded-full bg-primary"></div>
+              {loading ? (
+                // Loading skeleton for recent activity
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="animate-pulse flex items-center space-x-4 p-3 rounded-lg">
+                    <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-2 bg-gray-200 rounded w-1/2"></div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{activity.action}</p>
-                    <p className="text-xs text-muted-foreground">{activity.time}</p>
+                ))
+              ) : userDashboardStats?.recentProperties?.length > 0 ? (
+                // Show user's recent properties
+                userDashboardStats.recentProperties.slice(0, 4).map((property, i) => (
+                  <div key={i} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                      <Building2 className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{property.property_name || 'Property Updated'}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {property.city && property.state ? `${property.city}, ${property.state}` : 'Recent activity'}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                // Default/fallback activities
+                [
+                  { action: 'Property dashboard ready', time: 'just now', type: 'system' },
+                  { action: 'Welcome to AirCasa', time: '1 minute ago', type: 'welcome' },
+                  { action: 'Account setup complete', time: '5 minutes ago', type: 'setup' },
+                  { action: 'Ready to add properties', time: '10 minutes ago', type: 'ready' }
+                ].map((activity, i) => (
+                  <div key={i} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                      <div className="h-2 w-2 rounded-full bg-primary"></div>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{activity.action}</p>
+                      <p className="text-xs text-muted-foreground">{activity.time}</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
