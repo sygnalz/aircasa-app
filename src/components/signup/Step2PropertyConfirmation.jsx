@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, MapPin, Home, Bed, Bath, Square, XCircle } from "lucide-react";
+import { CheckCircle, MapPin, Home, Bed, Bath, Square, XCircle, AlertCircle } from "lucide-react";
+import { zillowService, propertyEnrichmentService } from "@/api/propertyServices";
 
 export default function Step2PropertyConfirmation({ onNext, onBack, signupData }) {
   const [propertyData, setPropertyData] = useState(null);
@@ -17,166 +18,117 @@ export default function Step2PropertyConfirmation({ onNext, onBack, signupData }
         setIsLoading(false);
         return;
       }
-      
-      const apiKey = 'f1a6158f5emshcb3278226d03580p13a4e9jsn4231b06ad520';
-      const apiHost = 'zillow-working-api.p.rapidapi.com';
-      const url = `https://zillow-working-api.p.rapidapi.com/pro/byaddress?propertyaddress=${encodeURIComponent(signupData.property_address)}`;
+
+      console.log('🔄 Processing property confirmation for:', signupData.property_address);
 
       try {
-        // First API call to get property details including zpid
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'X-RapidAPI-Key': apiKey,
-            'X-RapidAPI-Host': apiHost
-          }
-        });
+        let zillowData = null;
+        let enrichedData = null;
 
-        const data = await response.json();
-        console.log("Main API Response:", data);
-
-        if (!response.ok) {
-           if (data && data.message && data.message.toLowerCase().includes("subscribed")) {
-              throw new Error("API Subscription Error: Please verify your API subscription on RapidAPI.");
-           }
-          throw new Error(data.message || `Failed to fetch data: ${response.statusText}`);
-        }
-
-        if (!data || !data.propertyDetails) {
-          throw new Error("Could not find property details for this address. Please go back and try again.");
-        }
-
-        const details = data.propertyDetails;
-        
-        // Handle address properly - it might be an object or string
-        let formattedAddress = signupData.property_address;
-        if (details.address) {
-          if (typeof details.address === 'string') {
-            formattedAddress = details.address;
-          } else if (typeof details.address === 'object') {
-            // Construct address from object parts
-            const addr = details.address;
-            formattedAddress = [
-              addr.streetAddress,
-              addr.city,
-              addr.state,
-              addr.zipcode
-            ].filter(Boolean).join(', ');
-          }
-        }
-
-        // Get the zpid for subsequent calls
-        const zpid = details.zpid;
-        let zestimate = details.zestimate || details.price || 0; // Try multiple fields
-        let imageUrl = details.photos?.[0] || details.imgSrc || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80";
-
-        console.log("ZPID found:", zpid);
-        console.log("Initial Zestimate:", zestimate);
-        console.log("Initial Image URL:", imageUrl);
-
-        // If we have a zpid, fetch the dedicated Zestimate and Images
-        if (zpid) {
-          // Second API call for Zestimate
-          try {
-            const zestimateUrl = `https://zillow-com1.p.rapidapi.com/zestimate?zpid=${zpid}`;
-            console.log("Calling Zestimate API:", zestimateUrl);
-            
-            const zestimateResponse = await fetch(zestimateUrl, {
-              method: 'GET',
-              headers: {
-                'X-RapidAPI-Key': apiKey,
-                'X-RapidAPI-Host': 'zillow-com1.p.rapidapi.com'
-              }
-            });
-
-            const zestimateData = await zestimateResponse.json();
-            console.log("Zestimate API Response:", zestimateData);
-            
-            if (zestimateResponse.ok && zestimateData) {
-              // Try different possible field names for zestimate
-              const newZestimate = zestimateData.zestimate || 
-                                  zestimateData.price || 
-                                  zestimateData.value || 
-                                  zestimateData.estimate;
-              if (newZestimate) {
-                zestimate = newZestimate;
-                console.log("Updated Zestimate:", zestimate);
-              }
-            } else {
-              console.warn("Zestimate API call failed:", zestimateResponse.status, zestimateResponse.statusText);
+        // Check if we already have Zillow verification from Step 1
+        if (signupData.zillow_verification?.success) {
+          console.log('✅ Using Zillow data from Step 1');
+          zillowData = signupData.zillow_verification.data;
+          
+          // Get additional details if we have zpid
+          if (zillowData.zpid) {
+            console.log('🔍 Fetching additional Zillow details...');
+            const additionalDetails = await zillowService.getPropertyDetails(zillowData.zpid);
+            if (additionalDetails.success) {
+              // Merge additional data
+              zillowData = {
+                ...zillowData,
+                ...additionalDetails
+              };
             }
-          } catch (zestimateError) {
-            console.warn("Zestimate API call failed:", zestimateError);
           }
-
-          // Third API call for Images
-          try {
-            const imagesUrl = `https://zillow-com1.p.rapidapi.com/images?zpid=${zpid}`;
-            console.log("Calling Images API:", imagesUrl);
+        } else {
+          console.log('🔍 Fetching fresh Zillow data...');
+          // Fetch fresh Zillow data
+          const zillowResult = await zillowService.verifyAddress(signupData.property_address);
+          
+          if (zillowResult.success) {
+            zillowData = zillowResult.data;
             
-            const imagesResponse = await fetch(imagesUrl, {
-              method: 'GET',
-              headers: {
-                'X-RapidAPI-Key': apiKey,
-                'X-RapidAPI-Host': 'zillow-com1.p.rapidapi.com'
-              }
-            });
-
-            const imagesData = await imagesResponse.json();
-            console.log("Images API Response:", imagesData);
-            
-            if (imagesResponse.ok && imagesData) {
-              // Try different possible response structures
-              let newImageUrl = null;
-              if (Array.isArray(imagesData) && imagesData.length > 0) {
-                newImageUrl = imagesData[0]?.url || imagesData[0];
-              } else if (imagesData.images && imagesData.images.length > 0) {
-                newImageUrl = imagesData.images[0];
-              }
-
-              if (newImageUrl) {
-                imageUrl = newImageUrl;
-                console.log("Updated Image URL:", imageUrl);
+            // Get additional details
+            if (zillowData.zpid) {
+              const additionalDetails = await zillowService.getPropertyDetails(zillowData.zpid);
+              if (additionalDetails.success) {
+                zillowData = {
+                  ...zillowData,
+                  ...additionalDetails
+                };
               }
             }
-          } catch (imageError) {
-            console.warn("Images API call failed, using default image:", imageError);
+          } else {
+            console.warn('⚠️ Zillow verification failed:', zillowResult.error);
           }
         }
-        
-        const formattedData = {
-          address: formattedAddress,
-          property_type: details.propertyType || "N/A",
-          bedrooms: details.bedrooms || 0,
-          bathrooms: details.bathrooms || 0,
-          square_feet: details.livingArea || 0,
-          estimated_value: zestimate,
-          image_url: imageUrl,
-          year_built: details.yearBuilt || "N/A",
-          lot_size: details.lotSize || 0,
-          mls_verified: true,
-          zpid: zpid,
-          // Store the individual address components for later use
-          street: details.address?.streetAddress || "",
-          city: details.address?.city || "",
-          state: details.address?.state || "",
-          zip_code: details.address?.zipcode || ""
+
+        // Enrich property data with user input and API data
+        const userData = {
+          address: signupData.property_address,
+          ...signupData.address_components
         };
-        
-        console.log("Final formatted property data:", formattedData);
+
+        enrichedData = propertyEnrichmentService.enrichPropertyData(userData, zillowData?.propertyData);
+
+        // Format for display
+        const formattedData = {
+          address: enrichedData.address,
+          property_type: enrichedData.propertyType || "Single Family",
+          bedrooms: enrichedData.bedrooms || 0,
+          bathrooms: enrichedData.bathrooms || 0,
+          square_feet: enrichedData.sqft || 0,
+          estimated_value: enrichedData.estimatedValue || enrichedData.zestimate || 0,
+          image_url: enrichedData.images?.[0] || "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+          year_built: enrichedData.yearBuilt || "N/A",
+          lot_size: enrichedData.lotSize || 0,
+          mls_verified: enrichedData.verified || false,
+          zpid: enrichedData.zpid || null,
+          verification_source: enrichedData.verificationSource || 'Manual Entry',
+          // Store the individual address components for later use
+          street: enrichedData.street || signupData.address_components?.street || "",
+          city: enrichedData.city || signupData.address_components?.city || "",
+          state: enrichedData.state || signupData.address_components?.state || "",
+          zip_code: enrichedData.zipcode || signupData.address_components?.zipcode || ""
+        };
+
+        console.log('📊 Final formatted property data:', formattedData);
         setPropertyData(formattedData);
 
       } catch (err) {
-        console.error("Zillow API Error:", err);
+        console.error('❌ Property data fetch error:', err);
         setError(err.message || "An error occurred while fetching property data.");
-        setPropertyData(null);
+        
+        // Create minimal property data from user input as fallback
+        const fallbackData = {
+          address: signupData.property_address,
+          property_type: "Single Family",
+          bedrooms: 0,
+          bathrooms: 0,
+          square_feet: 0,
+          estimated_value: 0,
+          image_url: "https://images.unsplash.com/photo-1568605114967-8130f3a36994?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+          year_built: "N/A",
+          lot_size: 0,
+          mls_verified: false,
+          zpid: null,
+          verification_source: 'Manual Entry',
+          street: signupData.address_components?.street || "",
+          city: signupData.address_components?.city || "",
+          state: signupData.address_components?.state || "",
+          zip_code: signupData.address_components?.zipcode || ""
+        };
+        
+        setPropertyData(fallbackData);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchPropertyData();
-  }, [signupData.property_address]);
+  }, [signupData.property_address, signupData.zillow_verification]);
 
   const handleNext = () => {
     onNext({ property_data: propertyData });
@@ -271,7 +223,11 @@ export default function Step2PropertyConfirmation({ onNext, onBack, signupData }
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Verified By:</span>
-                <span className="font-medium text-green-600">✓ Zillow</span>
+                {propertyData?.mls_verified ? (
+                  <span className="font-medium text-green-600">✓ {propertyData.verification_source}</span>
+                ) : (
+                  <span className="font-medium text-amber-600">⚠ Manual Entry</span>
+                )}
               </div>
             </div>
           </div>
@@ -304,14 +260,25 @@ export default function Step2PropertyConfirmation({ onNext, onBack, signupData }
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-xl border border-blue-200">
-          <h3 className="font-semibold text-gray-900 mb-2">Zillow Estimated Value (Zestimate®)</h3>
-          <div className="text-3xl font-bold text-blue-600 mb-2">
+        <div className={`p-6 rounded-xl border ${propertyData?.mls_verified ? 'bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200' : 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-200'}`}>
+          <h3 className="font-semibold text-gray-900 mb-2">
+            {propertyData?.mls_verified ? 'Estimated Value (Zestimate®)' : 'Property Value'}
+          </h3>
+          <div className={`text-3xl font-bold mb-2 ${propertyData?.mls_verified ? 'text-blue-600' : 'text-amber-600'}`}>
             {propertyData?.estimated_value ? `$${propertyData.estimated_value.toLocaleString()}` : 'Not Available'}
           </div>
           <p className="text-sm text-gray-600">
-            This is not an appraisal and should be used as a starting point.
+            {propertyData?.mls_verified 
+              ? 'This is not an appraisal and should be used as a starting point.'
+              : 'Property value will be estimated during the enrichment process.'
+            }
           </p>
+          {!propertyData?.mls_verified && (
+            <div className="flex items-center mt-2 text-sm text-amber-700">
+              <AlertCircle className="w-4 h-4 mr-1" />
+              Property data will be enriched with ATTOM Data API
+            </div>
+          )}
         </div>
 
         <div className="flex gap-4">

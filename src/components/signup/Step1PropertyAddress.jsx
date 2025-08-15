@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MapPin, Loader2 } from "lucide-react";
+import { zillowService, propertyValidationService } from "@/api/propertyServices";
 
 export default function Step1PropertyAddress({ onNext, initialData }) {
   const [address, setAddress] = useState(initialData?.property_address || "");
@@ -110,17 +111,52 @@ export default function Step1PropertyAddress({ onNext, initialData }) {
       return;
     }
 
+    // Validate address format
+    const validation = propertyValidationService.validateAddress(address.trim());
+    if (!validation.valid) {
+      setError(validation.error);
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log("🔍 Verifying address with Zillow:", address.trim());
       
-      console.log("Submitting address:", address.trim());
-      onNext({ property_address: address.trim() });
+      // Call Zillow API to verify address
+      const zillowResult = await zillowService.verifyAddress(address.trim());
+      
+      if (zillowResult.success) {
+        console.log("✅ Address verified successfully");
+        // Parse address components for better data structure
+        const addressComponents = propertyValidationService.parseAddress(address.trim());
+        
+        onNext({ 
+          property_address: address.trim(),
+          zillow_verification: zillowResult,
+          address_components: addressComponents.components
+        });
+      } else {
+        console.warn("⚠️ Zillow verification failed, proceeding with manual address");
+        // Allow user to proceed even if Zillow fails
+        const addressComponents = propertyValidationService.parseAddress(address.trim());
+        
+        onNext({ 
+          property_address: address.trim(),
+          zillow_verification: { success: false, error: zillowResult.error },
+          address_components: addressComponents.components
+        });
+      }
     } catch (err) {
       console.error("Address verification error:", err);
-      setError("Unable to verify address. Please try again.");
+      // Still allow user to proceed with manual address entry
+      const addressComponents = propertyValidationService.parseAddress(address.trim());
+      
+      onNext({ 
+        property_address: address.trim(),
+        zillow_verification: { success: false, error: err.message },
+        address_components: addressComponents.components
+      });
     } finally {
       setIsLoading(false);
     }
