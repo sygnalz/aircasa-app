@@ -213,11 +213,32 @@ export default function PropertiesPage() {
   }, [isAuthenticated, user]);
 
   // Filter and sort properties
+  console.log('🔍 Filtering properties:', {
+    totalItems: items.length,
+    searchQuery,
+    statusFilter,
+    firstItem: items[0] ? Object.keys(items[0]) : 'No items'
+  });
+
   const filteredProperties = items
     .filter(property => {
-      const matchesSearch = property.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      console.log('🏠 Checking property for filters:', {
+        id: property.id,
+        title: property.title,
+        name: property.name,
+        status: property.status,
+        hasTitle: !!property.title,
+        hasName: !!property.name,
+        allFields: Object.keys(property).slice(0, 10) // First 10 fields
+      });
+
+      const matchesSearch = searchQuery === '' || 
+                           property.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                           property.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                            property.location?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesStatus = statusFilter === 'all' || property.status === statusFilter;
+      
+      console.log('🎯 Filter results:', { matchesSearch, matchesStatus });
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
@@ -461,6 +482,34 @@ export default function PropertiesPage() {
         </Card>
       )}
 
+      {/* Raw Property Data (Debug) */}
+      {items.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>🔍 Raw Property Data (Debug)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {items.map((property, index) => (
+                <div key={property.id || index} className="border p-4 rounded">
+                  <h4 className="font-medium">Property {index + 1}</h4>
+                  <div className="grid grid-cols-2 gap-2 text-sm mt-2">
+                    <div><strong>ID:</strong> {property.id}</div>
+                    <div><strong>Title:</strong> {property.title || 'N/A'}</div>
+                    <div><strong>Name:</strong> {property.name || 'N/A'}</div>
+                    <div><strong>Status:</strong> {property.status || 'N/A'}</div>
+                    <div><strong>Location:</strong> {property.location || 'N/A'}</div>
+                    <div><strong>app_email:</strong> {property.app_email || 'N/A'}</div>
+                    <div><strong>Fields Count:</strong> {Object.keys(property).length}</div>
+                    <div><strong>Sample Fields:</strong> {Object.keys(property).slice(0, 5).join(', ')}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Properties Grid/List */}
       {filteredProperties.length > 0 && (
         <div className={viewMode === 'grid' 
@@ -477,6 +526,17 @@ export default function PropertiesPage() {
             />
           ))}
         </div>
+      )}
+
+      {filteredProperties.length === 0 && items.length > 0 && (
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center text-yellow-600">
+              <p><strong>Debug:</strong> {items.length} properties loaded but {filteredProperties.length} after filtering</p>
+              <p>Check console for filtering details</p>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Load More / Pagination would go here */}
