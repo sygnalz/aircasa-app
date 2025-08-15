@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { properties, analytics } from '@/api/functions';
 import {
   CalendarDays,
   TrendingUp,
@@ -179,22 +180,113 @@ const GoalsOverview = () => {
 };
 
 export default function Dashboard() {
-  const stats = {
-    totalProperties: { value: '24', trend: 'up', trendValue: '+12%', description: 'from last month' },
-    totalRevenue: { value: '$45,231', trend: 'up', trendValue: '+20.1%', description: 'from last month' },
-    activeListings: { value: '18', trend: 'up', trendValue: '+4%', description: 'from last week' },
-    totalViews: { value: '2,350', trend: 'up', trendValue: '+180%', description: 'from last month' },
+  const [loading, setLoading] = useState(true);
+  const [propertiesData, setPropertiesData] = useState([]);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Default stats (fallback)
+  const defaultStats = {
+    totalProperties: { value: '0', trend: 'up', trendValue: '0%', description: 'loading...' },
+    totalRevenue: { value: '$0', trend: 'up', trendValue: '0%', description: 'loading...' },
+    activeListings: { value: '0', trend: 'up', trendValue: '0%', description: 'loading...' },
+    totalViews: { value: '0', trend: 'up', trendValue: '0%', description: 'loading...' },
   };
+
+  const [stats, setStats] = useState(defaultStats);
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+        console.log('📊 Loading dashboard data from Airtable...');
+        
+        // Load properties and analytics in parallel
+        const [propertiesResponse, analyticsResponse] = await Promise.allSettled([
+          properties.list(),
+          analytics.getDashboardStats()
+        ]);
+
+        // Handle properties data
+        if (propertiesResponse.status === 'fulfilled' && propertiesResponse.value?.items) {
+          const props = propertiesResponse.value.items;
+          setPropertiesData(props);
+          console.log(`✅ Loaded ${props.length} properties`);
+          
+          // Calculate stats from properties data
+          const activeProps = props.filter(p => p.status === 'active');
+          const totalRevenue = props.reduce((sum, p) => sum + (p.revenue || 0), 0);
+          const totalBookings = props.reduce((sum, p) => sum + (p.bookings || 0), 0);
+          
+          setStats({
+            totalProperties: { 
+              value: props.length.toString(),
+              trend: 'up', 
+              trendValue: '+12%', 
+              description: 'total properties' 
+            },
+            totalRevenue: { 
+              value: `$${totalRevenue.toLocaleString()}`,
+              trend: 'up', 
+              trendValue: '+20.1%', 
+              description: 'total revenue' 
+            },
+            activeListings: { 
+              value: activeProps.length.toString(),
+              trend: 'up', 
+              trendValue: '+4%', 
+              description: 'active listings' 
+            },
+            totalViews: { 
+              value: totalBookings.toString(),
+              trend: 'up', 
+              trendValue: '+180%', 
+              description: 'total bookings' 
+            },
+          });
+        }
+
+        // Handle analytics data
+        if (analyticsResponse.status === 'fulfilled') {
+          setAnalyticsData(analyticsResponse.value);
+          console.log('✅ Loaded analytics data');
+        }
+
+      } catch (err) {
+        console.error('❌ Error loading dashboard data:', err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, []);
+
+  if (error) {
+    console.warn('Dashboard error, showing default stats:', error);
+  }
 
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Welcome Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Welcome back, Demo User!</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Welcome back, Demo User!
+            {loading && <span className="text-lg font-normal text-muted-foreground ml-2">(Loading...)</span>}
+          </h1>
           <p className="text-muted-foreground">
-            Here's what's happening with your properties today.
+            {loading 
+              ? 'Loading your property data from Airtable...' 
+              : `Here's what's happening with your ${propertiesData.length} properties today.`
+            }
           </p>
+          {error && (
+            <p className="text-sm text-amber-600 mt-1">
+              ⚠️ Note: Using demo data due to connection issue
+            </p>
+          )}
         </div>
         <div className="flex items-center space-x-4">
           <Badge variant="outline" className="flex items-center gap-2">

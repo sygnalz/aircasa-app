@@ -1,0 +1,128 @@
+// Demo properties data that matches Airtable structure
+export default [
+  {
+    id: 'rec1234567890',
+    Name: 'Luxury Beachfront Villa',
+    Description: 'Stunning oceanfront villa with panoramic views, private beach access, and luxury amenities. Perfect for families or groups seeking an unforgettable getaway.',
+    Location: 'Miami Beach, FL',
+    'Price per Night': 450,
+    Bedrooms: 4,
+    Bathrooms: 3,
+    'Square Feet': 2500,
+    Status: 'active',
+    'Property Type': 'Villa',
+    'Total Bookings': 23,
+    'Total Revenue': 12500,
+    'Average Rating': 4.8,
+    'Review Count': 127,
+    Images: [
+      'https://images.unsplash.com/photo-1613490493576-7fde63acd811?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?auto=format&fit=crop&w=800&q=80'
+    ],
+    Amenities: ['WiFi', 'Pool', 'Ocean View', 'Kitchen', 'Parking', 'Air Conditioning'],
+    'Owner Email': 'owner1@example.com',
+    'Created Date': '2024-01-15',
+    'Last Updated': '2024-08-10',
+    _createdTime: '2024-01-15T10:00:00.000Z'
+  },
+  {
+    id: 'rec2345678901',
+    Name: 'Modern Downtown Apartment',
+    Description: 'Sleek, contemporary apartment in the heart of the city with floor-to-ceiling windows and modern amenities.',
+    Location: 'Seattle, WA',
+    'Price per Night': 180,
+    Bedrooms: 2,
+    Bathrooms: 2,
+    'Square Feet': 1200,
+    Status: 'active',
+    'Property Type': 'Apartment',
+    'Total Bookings': 31,
+    'Total Revenue': 8900,
+    'Average Rating': 4.6,
+    'Review Count': 89,
+    Images: [
+      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80'
+    ],
+    Amenities: ['WiFi', 'Gym', 'City View', 'Kitchen', 'Parking', 'Elevator'],
+    'Owner Email': 'owner2@example.com',
+    'Created Date': '2024-02-01',
+    'Last Updated': '2024-08-12',
+    _createdTime: '2024-02-01T14:30:00.000Z'
+  },
+  {
+    id: 'rec3456789012',
+    Name: 'Cozy Mountain Cabin',
+    Description: 'Rustic yet comfortable cabin nestled in the mountains, perfect for a peaceful retreat with hiking trails nearby.',
+    Location: 'Aspen, CO',
+    'Price per Night': 320,
+    Bedrooms: 3,
+    Bathrooms: 2,
+    'Square Feet': 1800,
+    Status: 'maintenance',
+    'Property Type': 'Cabin',
+    'Total Bookings': 18,
+    'Total Revenue': 7200,
+    'Average Rating': 4.9,
+    'Review Count': 156,
+    Images: [
+      'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=800&q=80'
+    ],
+    Amenities: ['WiFi', 'Fireplace', 'Mountain View', 'Kitchen', 'Hiking Trails', 'Hot Tub'],
+    'Owner Email': 'owner3@example.com',
+    'Created Date': '2024-01-20',
+    'Last Updated': '2024-08-08',
+    _createdTime: '2024-01-20T09:15:00.000Z'
+  },
+  {
+    id: 'rec4567890123',
+    Name: 'Historic Brownstone',
+    Description: 'Charming historic brownstone with original architecture and modern updates in a vibrant neighborhood.',
+    Location: 'Boston, MA',
+    'Price per Night': 275,
+    Bedrooms: 3,
+    Bathrooms: 2,
+    'Square Feet': 1600,
+    Status: 'active',
+    'Property Type': 'Townhouse',
+    'Total Bookings': 15,
+    'Total Revenue': 5500,
+    'Average Rating': 4.4,
+    'Review Count': 73,
+    Images: [
+      'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80'
+    ],
+    Amenities: ['WiFi', 'Historic Details', 'Garden', 'Kitchen', 'Near Transit', 'Brick Walls'],
+    'Owner Email': 'owner4@example.com',
+    'Created Date': '2024-03-05',
+    'Last Updated': '2024-08-14',
+    _createdTime: '2024-03-05T16:45:00.000Z'
+  },
+  {
+    id: 'rec5678901234',
+    Name: 'Desert Oasis Retreat',
+    Description: 'Stunning desert property with infinity pool, spa amenities, and breathtaking sunset views.',
+    Location: 'Scottsdale, AZ',
+    'Price per Night': 380,
+    Bedrooms: 4,
+    Bathrooms: 4,
+    'Square Feet': 2200,
+    Status: 'pending',
+    'Property Type': 'Villa',
+    'Total Bookings': 8,
+    'Total Revenue': 3800,
+    'Average Rating': 4.7,
+    'Review Count': 92,
+    Images: [
+      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'
+    ],
+    Amenities: ['WiFi', 'Pool', 'Spa', 'Desert View', 'Kitchen', 'Outdoor Kitchen'],
+    'Owner Email': 'owner5@example.com',
+    'Created Date': '2024-04-10',
+    'Last Updated': '2024-08-15',
+    _createdTime: '2024-04-10T11:20:00.000Z'
+  }
+];

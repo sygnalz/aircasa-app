@@ -123,19 +123,20 @@ export default function PropertiesPage() {
     setError(null);
     setLoading(true);
     try {
-      // Try to load from API first
+      console.log('🔄 Loading properties from Airtable...');
       const data = await properties.list();
-      if (data?.items && Array.isArray(data.items) && data.items.length > 0) {
+      
+      if (data?.items && Array.isArray(data.items)) {
+        console.log(`✅ Loaded ${data.items.length} properties from Airtable`);
         setItems(data.items);
       } else {
-        // Fallback to sample data for demo purposes
-        console.log('Using sample data for demo');
-        setItems(sampleProperties);
+        console.log('⚠️ No properties data received, using fallback');
+        setItems([]);
       }
     } catch (err) {
-      console.log('API not ready, using sample data:', err.message);
-      // Use sample data when API isn't ready
-      setItems(sampleProperties);
+      console.error('❌ Error loading properties:', err.message);
+      setError(`Failed to load properties: ${err.message}`);
+      setItems([]);
     } finally {
       setLoading(false);
     }
