@@ -13,6 +13,7 @@ import AirtableDebug from '@/pages/AirtableDebug.jsx';
 import OnboardingPage from '@/pages/Onboarding.jsx';
 import PackageSelection from '@/pages/PackageSelection.jsx';
 import PhotoPackages from '@/pages/PhotoPackages.jsx';
+import { AiChatProvider } from '@/contexts/AiChatContext';
 import { UserRoute } from './components/auth/ProtectedRoute';
 
 function AuthGate({ children }) {
@@ -184,9 +185,11 @@ function ProtectedShell() {
 
   return (
     <AuthGate>
-      <RoleBasedLayout>
-        <Outlet />
-      </RoleBasedLayout>
+      <AiChatProvider>
+        <RoleBasedLayout>
+          <Outlet />
+        </RoleBasedLayout>
+      </AiChatProvider>
     </AuthGate>
   );
 }
