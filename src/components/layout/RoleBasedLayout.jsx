@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { AppLayout } from './AppLayout';
 
-// Navigation items based on roles
+// Navigation items based on roles - simplified for header-only layout
 const getNavigationItems = (role, permissions) => {
   const baseItems = [
     {
@@ -15,26 +15,11 @@ const getNavigationItems = (role, permissions) => {
 
   const roleBasedItems = {
     User: [
-      {
-        name: 'My Properties',
-        href: '/properties',
-        icon: 'Building',
-        description: 'Your property listings'
-      },
-      {
-        name: 'Conversations',
-        href: '/conversations',
-        icon: 'MessageSquare',
-        description: 'Chat with Casa AI'
-      }
+      // Removed My Properties - redundant with Dashboard
+      // Removed Conversations - will be replaced with AI Chat Agent
     ],
     Agent: [
-      {
-        name: 'My Properties',
-        href: '/agent/properties',
-        icon: 'Building',
-        description: 'Assigned properties'
-      },
+      // Most navigation moved to dashboard - keeping essential items only
       {
         name: 'Clients',
         href: '/agent/clients',
@@ -46,32 +31,15 @@ const getNavigationItems = (role, permissions) => {
         href: '/agent/schedule',
         icon: 'Calendar',
         description: 'Showings & appointments'
-      },
-      {
-        name: 'Commissions',
-        href: '/agent/commissions',
-        icon: 'DollarSign',
-        description: 'Earnings tracker'
       }
     ],
     VA: [
-      {
-        name: 'Conversations',
-        href: '/va/conversations',
-        icon: 'MessageSquare',
-        description: 'Monitor active chats'
-      },
+      // Removed Conversations - will be replaced with AI Chat Agent
       {
         name: 'Support Queue',
         href: '/va/support',
         icon: 'Headphones', 
         description: 'User support requests'
-      },
-      {
-        name: 'Analytics',
-        href: '/va/analytics',
-        icon: 'TrendingUp',
-        description: 'Conversation insights'
       }
     ],
     Admin: [
@@ -82,34 +50,10 @@ const getNavigationItems = (role, permissions) => {
         description: 'Manage all users'
       },
       {
-        name: 'All Properties',
-        href: '/admin/properties',
-        icon: 'Building',
-        description: 'System-wide properties'
-      },
-      {
-        name: 'Conversations',
-        href: '/admin/conversations', 
-        icon: 'MessageSquare',
-        description: 'All chat logs'
-      },
-      {
-        name: 'Analytics',
+        name: 'System Analytics',
         href: '/admin/analytics',
         icon: 'BarChart',
         description: 'System analytics'
-      },
-      {
-        name: 'Agents',
-        href: '/admin/agents',
-        icon: 'UserCheck', 
-        description: 'Manage agents'
-      },
-      {
-        name: 'VAs',
-        href: '/admin/vas',
-        icon: 'Headphones',
-        description: 'Manage VAs'
       },
       {
         name: 'Settings',
