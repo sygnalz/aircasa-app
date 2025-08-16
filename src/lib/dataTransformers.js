@@ -208,8 +208,8 @@ export function transformPropertyForAirtable(appProperty) {
     app_is_buying_home: appProperty.is_buying_home || false,
     app_referred_by: appProperty.referred_by || '',
     
-    // Milestone Task Completion Fields
-    completed_intake: appProperty.completedIntake || false,
+    // Milestone Task Completion Fields (using exact Airtable field names)
+    property_intake_completed: appProperty.completedIntake || false,
     photos_completed: appProperty.photosCompleted || false,
     consultation_completed: appProperty.consultationCompleted || false,
     is_buying_home: appProperty.isBuyingHome || false,

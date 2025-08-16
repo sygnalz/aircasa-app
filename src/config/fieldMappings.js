@@ -218,9 +218,9 @@ export const PROPERTIES_FIELD_MAPPING = {
     default: false
   },
   
-  // Milestone Task Completion Fields (as per PDF documentation)
+  // Milestone Task Completion Fields (using exact Airtable field names)
   completedIntake: {
-    airtableFields: ['completed_intake', 'property_intake_completed', 'intake_completed'],
+    airtableFields: ['property_intake_completed', 'completed_intake', 'intake_completed'],
     type: 'boolean',
     default: false
   },

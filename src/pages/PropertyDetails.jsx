@@ -22,7 +22,7 @@ import {
   Calendar
 } from 'lucide-react';
 
-const TaskListPanel = ({ property, onOpenForm, onTaskComplete }) => {
+const TaskListPanel = ({ property, onOpenForm, onToggleTaskComplete }) => {
   // Task completion logic based on property data from Airtable
   const tasks = [
     {
@@ -97,8 +97,8 @@ const TaskListPanel = ({ property, onOpenForm, onTaskComplete }) => {
                     {task.description}
                   </p>
                 </div>
-                {!task.completed && (
-                  <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
+                  {!task.completed && task.action && (
                     <Button 
                       size="sm" 
                       className={`text-xs py-1 px-3 h-7 ${task.actionColor} text-white`}
@@ -106,25 +106,29 @@ const TaskListPanel = ({ property, onOpenForm, onTaskComplete }) => {
                     >
                       {task.actionText}
                     </Button>
-                    {task.completionField && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="text-xs py-1 px-3 h-7 border-gray-300 hover:bg-gray-50"
-                        onClick={() => {
-                          console.log('🔄 TaskListPanel Mark Complete clicked:', task.completionField);
-                          if (onTaskComplete) {
-                            onTaskComplete(task.completionField);
-                          } else {
-                            console.error('❌ onTaskComplete function not available');
-                          }
-                        }}
-                      >
-                        Mark Complete
-                      </Button>
-                    )}
-                  </div>
-                )}
+                  )}
+                  {task.completionField && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className={`text-xs py-1 px-3 h-7 ${
+                        task.completed 
+                          ? 'border-red-300 text-red-700 hover:bg-red-50' 
+                          : 'border-gray-300 hover:bg-gray-50'
+                      }`}
+                      onClick={() => {
+                        console.log('🔄 TaskListPanel Toggle Complete clicked:', task.completionField, 'current:', task.completed);
+                        if (onToggleTaskComplete) {
+                          onToggleTaskComplete(task.completionField, task.completed);
+                        } else {
+                          console.error('❌ onToggleTaskComplete function not available');
+                        }
+                      }}
+                    >
+                      {task.completed ? 'Mark Incomplete' : 'Mark Complete'}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
             {index < tasks.length - 1 && <Separator />}
@@ -135,7 +139,7 @@ const TaskListPanel = ({ property, onOpenForm, onTaskComplete }) => {
   );
 };
 
-const HomeBuyingTasks = ({ property, onOpenForm, onTaskComplete, onToggleBuyingHome }) => {
+const HomeBuyingTasks = ({ property, onOpenForm, onToggleTaskComplete, onToggleBuyingHome }) => {
   // Only show if user is buying a home
   if (!property?.isBuyingHome) {
     return (
@@ -219,8 +223,8 @@ const HomeBuyingTasks = ({ property, onOpenForm, onTaskComplete, onToggleBuyingH
                     {task.description}
                   </p>
                 </div>
-                {!task.completed && (
-                  <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap">
+                  {!task.completed && task.action && (
                     <Button 
                       size="sm" 
                       className="bg-green-600 hover:bg-green-700 text-white text-xs py-1 px-3 h-7"
@@ -228,23 +232,29 @@ const HomeBuyingTasks = ({ property, onOpenForm, onTaskComplete, onToggleBuyingH
                     >
                       {task.actionText}
                     </Button>
+                  )}
+                  {task.completionField && (
                     <Button 
                       size="sm" 
                       variant="outline"
-                      className="text-xs py-1 px-3 h-7 border-green-300 hover:bg-green-50"
+                      className={`text-xs py-1 px-3 h-7 ${
+                        task.completed 
+                          ? 'border-red-300 text-red-700 hover:bg-red-50' 
+                          : 'border-green-300 hover:bg-green-50'
+                      }`}
                       onClick={() => {
-                        console.log('🔄 HomeBuyingTasks Mark Complete clicked:', task.completionField);
-                        if (onTaskComplete) {
-                          onTaskComplete(task.completionField);
+                        console.log('🔄 HomeBuyingTasks Toggle Complete clicked:', task.completionField, 'current:', task.completed);
+                        if (onToggleTaskComplete) {
+                          onToggleTaskComplete(task.completionField, task.completed);
                         } else {
-                          console.error('❌ onTaskComplete function not available');
+                          console.error('❌ onToggleTaskComplete function not available');
                         }
                       }}
                     >
-                      Mark Complete
+                      {task.completed ? 'Mark Incomplete' : 'Mark Complete'}
                     </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             </div>
             {index < tasks.length - 1 && <Separator />}
@@ -352,7 +362,7 @@ export default function PropertyDetails() {
     }
   };
 
-  const markTaskComplete = async (completionField) => {
+  const toggleTaskComplete = async (completionField, currentStatus) => {
     if (updating) {
       console.log('⏳ Update already in progress, skipping');
       return;
@@ -360,12 +370,13 @@ export default function PropertyDetails() {
     
     try {
       setUpdating(true);
-      console.log('🔄 markTaskComplete called with:', completionField);
+      const newStatus = !currentStatus;
+      console.log(`🔄 toggleTaskComplete called with: ${completionField}, current: ${currentStatus}, new: ${newStatus}`);
       console.log('🔄 Current property data:', property);
       
       const updatedPropertyData = {
         ...property,
-        [completionField]: true
+        [completionField]: newStatus
       };
       
       console.log('🔄 Updated property data to send:', updatedPropertyData);
@@ -373,10 +384,10 @@ export default function PropertyDetails() {
       const updatedProperty = await properties.update(propertyId, updatedPropertyData);
       setProperty(updatedProperty);
       
-      console.log('✅ Task marked as complete successfully:', completionField);
+      console.log(`✅ Task ${newStatus ? 'completed' : 'marked incomplete'} successfully:`, completionField);
       console.log('✅ Updated property received:', updatedProperty);
     } catch (error) {
-      console.error('❌ Error marking task complete:', error);
+      console.error('❌ Error updating task:', error);
       alert(`Error updating task: ${error.message}`);
     } finally {
       setUpdating(false);
@@ -450,12 +461,12 @@ export default function PropertyDetails() {
             <TaskListPanel 
               property={property} 
               onOpenForm={openFilloutForm} 
-              onTaskComplete={markTaskComplete}
+              onToggleTaskComplete={toggleTaskComplete}
             />
             <HomeBuyingTasks 
               property={property}
               onOpenForm={openFilloutForm} 
-              onTaskComplete={markTaskComplete}
+              onToggleTaskComplete={toggleTaskComplete}
               onToggleBuyingHome={toggleBuyingHome}
             />
           </div>
