@@ -67,6 +67,7 @@ export function transformProperty(airtableRecord) {
       
       // Media and Features
       images: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'images'),
+      app_image_url: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'app_image_url'),
       amenities: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'amenities'),
       
       // Preferences

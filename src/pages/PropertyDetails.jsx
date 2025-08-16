@@ -459,10 +459,10 @@ export default function PropertyDetails() {
     );
   }
 
-  // Get property image
-  const propertyImage = property.images && property.images.length > 0 
+  // Get property image from app_image_url field
+  const propertyImage = property.app_image_url || (property.images && property.images.length > 0 
     ? (Array.isArray(property.images[0]) ? property.images[0][0]?.url : property.images[0])
-    : null;
+    : null);
 
   // Format currency
   const formatCurrency = (amount) => {

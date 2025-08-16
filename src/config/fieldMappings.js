@@ -176,6 +176,11 @@ export const PROPERTIES_FIELD_MAPPING = {
     type: 'array',
     default: []
   },
+  app_image_url: {
+    airtableFields: ['app_image_url', 'Image URL', 'Property Image', 'image_url'],
+    type: 'string',
+    default: ''
+  },
   amenities: {
     airtableFields: ['app_amenities', 'Amenities', 'Features', 'amenities'],
     type: 'array',
