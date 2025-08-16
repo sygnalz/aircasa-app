@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import { properties as propertiesFunction } from "@/api/functions/properties.js";
-// import { getIntakeForPropertyAdmin } from "@/api/functions/getIntakeForPropertyAdmin.js"; // File doesn't exist
+// import { getIntakeForPropertyAdmin } from "@/api/functions/getIntakeForPropertyAdmin.js"; // File doesn't exist - using functions.js instead
 import { PropertyIntake } from "@/api/entities";
 import { User } from "@/api/entities"; 
 import { AIInsight } from "@/api/entities"; 

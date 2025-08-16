@@ -6,10 +6,10 @@ import { Button } from '@/components/ui/button';
 import { AlertTriangle, Eye, Home } from 'lucide-react';
 
 export function PropertyTile({ property }) {
-  // Get property image (use first image if available)
-  const propertyImage = property.images && property.images.length > 0 
+  // Get property image from app_image_url field (prioritized) or fallback to images array
+  const propertyImage = property.app_image_url || (property.images && property.images.length > 0 
     ? (Array.isArray(property.images[0]) ? property.images[0][0]?.url : property.images[0])
-    : null;
+    : null);
 
   // Format price/estimated value
   const formatCurrency = (amount) => {
@@ -23,7 +23,7 @@ export function PropertyTile({ property }) {
   };
 
   // Determine if property needs attention (could be based on various factors)
-  const needsAttention = !property.images || property.images.length === 0 || !property.description;
+  const needsAttention = (!property.app_image_url && (!property.images || property.images.length === 0)) || !property.description;
 
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">

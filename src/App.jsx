@@ -11,6 +11,8 @@ import PropertyDetails from '@/pages/PropertyDetails.jsx';
 import PropertyWorkspace from '@/pages/PropertyWorkspace.jsx';
 import AirtableDebug from '@/pages/AirtableDebug.jsx';
 import OnboardingPage from '@/pages/Onboarding.jsx';
+import PackageSelection from '@/pages/PackageSelection.jsx';
+import PhotoPackages from '@/pages/PhotoPackages.jsx';
 import { UserRoute } from './components/auth/ProtectedRoute';
 
 function AuthGate({ children }) {
@@ -201,6 +203,8 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/properties" element={<Properties />} />
         <Route path="/property/:propertyId" element={<PropertyDetails />} />
+        <Route path="/packages/:propertyId" element={<PackageSelection />} />
+        <Route path="/photo-packages/:propertyId" element={<PhotoPackages />} />
         <Route path="/propertyworkspace" element={<PropertyWorkspace />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/airtable-debug" element={<AirtableDebug />} />
