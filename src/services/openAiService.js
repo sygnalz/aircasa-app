@@ -61,52 +61,97 @@ class OpenAiService {
    * Build system prompt with context
    */
   buildSystemPrompt(context) {
-    const { user, property, currentPage, taskStatus } = context;
+    const { user, property, userProperties, currentPage, taskStatus, intent, chatHistoryLength } = context;
     
-    let systemPrompt = `You are AirCasa AI, a helpful and knowledgeable real estate assistant specializing in helping people sell their homes. You are integrated into the AirCasa platform and have access to the user's specific property information and progress.
+    let systemPrompt = `You are AirCasa AI, a sophisticated real estate assistant powered by OpenAI with premium ElevenLabs voice capabilities. You specialize in helping people sell their homes through the AirCasa platform and have access to comprehensive user and property data.
 
-IMPORTANT GUIDELINES:
-- Be conversational, helpful, and encouraging
-- Provide specific, actionable advice
-- Reference the user's actual property data when available
-- Guide users through the home selling process step by step
-- Keep responses concise but informative (2-3 sentences typically)
-- Use a friendly, professional tone
-- Focus on next steps and practical advice
+CORE CAPABILITIES:
+- Real-time property analysis and market insights
+- Step-by-step guidance through the home selling process
+- Personalized recommendations based on user's specific situation
+- Voice interaction with Always Listening, Click-to-Talk, and premium voice synthesis
+- Access to multiple property data sources and user context
 
-CURRENT CONTEXT:`;
+RESPONSE GUIDELINES:
+- Be conversational, knowledgeable, and encouraging
+- Provide specific, actionable advice tailored to the user's situation
+- Reference actual property data and user progress when available
+- Keep responses focused and practical (2-4 sentences typically)
+- Use a warm, professional tone that builds confidence
+- Prioritize next steps and immediate value
 
-    if (currentPage) {
-      systemPrompt += `\n- User is currently on: ${currentPage} page`;
+CURRENT SESSION CONTEXT:`;
+
+    if (user && user.name && user.name !== 'User') {
+      systemPrompt += `\n- User: ${user.name} (${user.email || user.id})`;
+      if (user.role) systemPrompt += ` - Role: ${user.role}`;
     }
 
-    if (property) {
-      systemPrompt += `\n- Property: ${property.location || 'Unknown location'}`;
-      systemPrompt += `\n- Property Type: ${property.propertyType || 'Unknown'}`;
+    if (currentPage) {
+      systemPrompt += `\n- Current Page: ${currentPage}`;
+    }
+
+    if (chatHistoryLength !== undefined) {
+      systemPrompt += `\n- Conversation Length: ${chatHistoryLength} previous messages`;
+    }
+
+    if (intent) {
+      systemPrompt += `\n- User Intent: ${intent}`;
+    }
+
+    if (property && property.location !== 'Property data unavailable') {
+      systemPrompt += `\n\nPRIMARY PROPERTY:`;
+      systemPrompt += `\n- Location: ${property.location || 'Unknown'}`;
+      systemPrompt += `\n- Type: ${property.propertyType || 'Unknown'}`;
       if (property.marketValue) {
-        systemPrompt += `\n- Estimated Value: $${property.marketValue.toLocaleString()}`;
+        systemPrompt += `\n- Market Value: $${property.marketValue.toLocaleString()}`;
       }
+      if (property.bedrooms && property.bathrooms) {
+        systemPrompt += `\n- Layout: ${property.bedrooms} bed, ${property.bathrooms} bath`;
+      }
+      if (property.squareFootage) {
+        systemPrompt += `\n- Size: ${property.squareFootage.toLocaleString()} sq ft`;
+      }
+    }
+
+    if (userProperties && userProperties.length > 1) {
+      systemPrompt += `\n\nADDITIONAL PROPERTIES: User has ${userProperties.length - 1} other properties in the system`;
     }
 
     if (taskStatus) {
       const incompleteTasks = [];
-      if (!taskStatus.propertyIntake) incompleteTasks.push('Property Intake');
-      if (!taskStatus.photosMedia) incompleteTasks.push('Photos & Media');
-      if (!taskStatus.agentConsultation) incompleteTasks.push('Agent Consultation');
+      const completedTasks = [];
+      
+      if (taskStatus.propertyIntake) completedTasks.push('Property Intake');
+      else incompleteTasks.push('Property Intake');
+      
+      if (taskStatus.photosMedia) completedTasks.push('Photos & Media');
+      else incompleteTasks.push('Photos & Media');
+      
+      if (taskStatus.agentConsultation) completedTasks.push('Agent Consultation');
+      else incompleteTasks.push('Agent Consultation');
       
       if (taskStatus.homeBuyingEnabled) {
-        if (!taskStatus.homeCriteria) incompleteTasks.push('Home Criteria');
-        if (!taskStatus.personalFinancials) incompleteTasks.push('Personal Financials');
+        if (taskStatus.homeCriteria) completedTasks.push('Home Criteria');
+        else incompleteTasks.push('Home Criteria');
+        
+        if (taskStatus.personalFinancials) completedTasks.push('Personal Financials');
+        else incompleteTasks.push('Personal Financials');
       }
 
+      systemPrompt += `\n\nTASK STATUS:`;
+      if (completedTasks.length > 0) {
+        systemPrompt += `\n- Completed: ${completedTasks.join(', ')}`;
+      }
       if (incompleteTasks.length > 0) {
-        systemPrompt += `\n- Incomplete Tasks: ${incompleteTasks.join(', ')}`;
+        systemPrompt += `\n- Pending: ${incompleteTasks.join(', ')}`;
+        systemPrompt += `\n- Next Priority: ${incompleteTasks[0]}`;
       } else {
-        systemPrompt += `\n- All tasks completed! Ready for MLS listing.`;
+        systemPrompt += `\n- Status: All tasks completed! Ready for MLS listing`;
       }
     }
 
-    systemPrompt += `\n\nRespond naturally and helpfully based on this context. If asked about tasks or progress, reference the specific information above.`;
+    systemPrompt += `\n\nINSTRUCTIONS: Respond helpfully and naturally based on this comprehensive context. Reference specific details when relevant, provide actionable guidance, and maintain a supportive tone that builds user confidence in their home selling journey.`;
 
     return systemPrompt;
   }

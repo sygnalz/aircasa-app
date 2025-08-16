@@ -9,6 +9,17 @@ export const AI_CHAT_CONFIG = {
   BASE_ID: 'appTeT9BZr8gzt7fL',
   API_KEY: 'patUKilQrjCLdlg3R.363c56f2d93a55b041f8b9548162434fe4c73ba83b74ab78affb9832602e12de',
   
+  // Main AirCasa Airtable base for property data access
+  MAIN_AIRCASA_BASE: {
+    BASE_ID: import.meta.env.VITE_AIRTABLE_BASE_ID || 'appPEvLMTmfiUZw14',
+    API_KEY: import.meta.env.VITE_AIRTABLE_API_KEY || 'patdhA1oeVPghOiE4.77ed2348b1bc5c4e826ffee2e704ef6eb5be6c2549a3068f57818ef42030cebe',
+    TABLES: {
+      PROPERTIES: import.meta.env.VITE_AIRTABLE_PROPERTIES_TABLE || 'Properties',
+      USERS: import.meta.env.VITE_AIRTABLE_USERS_TABLE || 'Users',
+      CONVERSATIONS: import.meta.env.VITE_AIRTABLE_CONVERSATIONS_TABLE || 'Conversations'
+    }
+  },
+  
   // Table names in aiChat base
   TABLES: {
     CHAT_SESSIONS: 'Chat Sessions',

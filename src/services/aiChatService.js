@@ -5,6 +5,7 @@
 
 import { AI_CHAT_CONFIG, MESSAGE_TYPES, USER_INTENTS, WIDGET_STATES } from '@/config/aiChatConfig';
 import aiChatAirtable from './aiChatAirtable';
+import aiChatMainAirtable from './aiChatMainAirtable';
 import voiceService from './voiceService';
 import openAiService from './openAiService';
 import { properties, users } from '@/api/functions'; // Existing AirCasa API functions
@@ -91,30 +92,82 @@ class AiChatService {
 
   async loadUserContext(userId, propertyId) {
     try {
-      // Load property data from existing AirCasa tables
-      const propertyData = await properties.get(propertyId);
+      console.log('📊 Loading user context from both Airtable bases...', { userId, propertyId });
       
-      // Try to get user data - users service has getById method, not get
-      let userData;
-      try {
-        userData = await users.getById(userId);
-      } catch (userError) {
-        console.log('Could not load user data, using basic info:', userError);
-        userData = { id: userId };
-      }
+      // Load data from both sources in parallel for better performance
+      const [propertyData, userData, userProperties] = await Promise.allSettled([
+        // Try main Airtable base first, then fallback to API functions
+        this.getPropertyData(propertyId),
+        this.getUserData(userId),
+        aiChatMainAirtable.getUserProperties(userId)
+      ]);
       
       this.userContext = {
-        user: userData,
-        property: propertyData,
+        user: userData.status === 'fulfilled' ? userData.value : { id: userId, email: userId },
+        property: propertyData.status === 'fulfilled' ? propertyData.value : { id: propertyId },
+        userProperties: userProperties.status === 'fulfilled' ? userProperties.value : [],
         currentPage: this.getCurrentPageContext(),
-        taskStatus: this.getTaskCompletionStatus(propertyData)
+        taskStatus: this.getTaskCompletionStatus(propertyData.status === 'fulfilled' ? propertyData.value : null)
       };
       
-      console.log('📊 User context loaded:', this.userContext);
+      console.log('✅ Enhanced user context loaded:', {
+        hasUser: !!this.userContext.user.email,
+        hasProperty: !!this.userContext.property.location,
+        propertyCount: this.userContext.userProperties.length,
+        currentPage: this.userContext.currentPage
+      });
       
     } catch (error) {
       console.error('Error loading user context:', error);
-      this.userContext = { user: { id: userId }, property: { id: propertyId } };
+      this.userContext = { 
+        user: { id: userId, email: userId }, 
+        property: { id: propertyId },
+        userProperties: [],
+        currentPage: this.getCurrentPageContext(),
+        taskStatus: {}
+      };
+    }
+  }
+
+  async getPropertyData(propertyId) {
+    try {
+      // Try main Airtable base first
+      const propertyData = await aiChatMainAirtable.getProperty(propertyId);
+      if (propertyData && !propertyData.error) {
+        return propertyData;
+      }
+    } catch (error) {
+      console.log('Main Airtable property fetch failed, trying API functions:', error.message);
+    }
+
+    try {
+      // Fallback to existing API functions
+      const propertyData = await properties.get(propertyId);
+      return propertyData;
+    } catch (error) {
+      console.log('API functions property fetch failed:', error.message);
+      return { id: propertyId, location: 'Property data unavailable' };
+    }
+  }
+
+  async getUserData(userId) {
+    try {
+      // Try main Airtable base first
+      const userData = await aiChatMainAirtable.getUser(userId);
+      if (userData && !userData.error) {
+        return userData;
+      }
+    } catch (error) {
+      console.log('Main Airtable user fetch failed, trying API functions:', error.message);
+    }
+
+    try {
+      // Fallback to existing API functions
+      const userData = await users.getById(userId);
+      return userData;
+    } catch (error) {
+      console.log('API functions user fetch failed:', error.message);
+      return { id: userId, email: userId, name: 'User' };
     }
   }
 
@@ -244,7 +297,7 @@ class AiChatService {
     try {
       // Check if OpenAI is available and use it for intelligent responses
       if (openAiService.isApiAvailable()) {
-        console.log('🧠 Using OpenAI for intelligent response generation');
+        console.log('🧠 Using OpenAI for intelligent response generation with enhanced context');
         
         // Format chat history for OpenAI
         const chatHistory = await this.getChatHistory();
@@ -253,23 +306,32 @@ class AiChatService {
         // Add current message
         formattedMessages.push({ role: 'user', content: message });
         
+        // Enhance context with additional data
+        const enhancedContext = {
+          ...this.userContext,
+          intent: intent,
+          currentTime: new Date().toISOString(),
+          userProperties: this.userContext.userProperties || [],
+          chatHistoryLength: formattedMessages.length - 1 // Exclude current message
+        };
+        
         // Generate response with full context awareness
-        const response = await openAiService.generateResponse(formattedMessages, this.userContext);
+        const response = await openAiService.generateResponse(formattedMessages, enhancedContext);
         
         // Log performance metrics
-        console.log('✅ OpenAI response generated successfully');
+        console.log('✅ OpenAI response generated successfully with enhanced context');
         return response;
         
       } else {
-        console.log('💭 OpenAI not available, using contextual fallback responses');
-        // Fallback to contextual responses when OpenAI is not available
-        return this.generateContextualResponse(message, intent);
+        console.log('💭 OpenAI not available, using enhanced contextual responses');
+        // Fallback to enhanced contextual responses when OpenAI is not available
+        return this.generateEnhancedContextualResponse(message, intent);
       }
       
     } catch (error) {
       console.error('❌ Error in AI response generation:', error);
       // Always fallback to contextual responses on error
-      return this.generateContextualResponse(message, intent);
+      return this.generateEnhancedContextualResponse(message, intent);
     }
   }
 
@@ -330,6 +392,67 @@ Provide helpful, concise responses about real estate, property selling, and usin
     }
   }
 
+  generateEnhancedContextualResponse(message, intent) {
+    const { user, property, userProperties, taskStatus, currentPage } = this.userContext || {};
+    
+    // Enhanced context-aware responses with more detailed information
+    switch (intent) {
+      case USER_INTENTS.PROPERTY_QUESTION:
+        if (property && property.location !== 'Property data unavailable') {
+          let response = `I can help with your property at ${property.location}. `;
+          if (property.propertyType) response += `This ${property.propertyType.toLowerCase()} `;
+          if (property.marketValue) response += `is valued at $${property.marketValue.toLocaleString()}. `;
+          if (property.bedrooms && property.bathrooms) {
+            response += `It has ${property.bedrooms} bedrooms and ${property.bathrooms} bathrooms. `;
+          }
+          response += "What specific information would you like to know?";
+          return response;
+        }
+        if (userProperties && userProperties.length > 0) {
+          return `I see you have ${userProperties.length} property(ies) in the system. Which property would you like to discuss, or would you like an overview of all your properties?`;
+        }
+        return "I'd be happy to help with property questions. What would you like to know?";
+        
+      case USER_INTENTS.PROCESS_GUIDANCE:
+        if (currentPage === 'dashboard' && userProperties && userProperties.length > 0) {
+          return `From your dashboard, I can see you have ${userProperties.length} property(ies). The next steps typically involve completing property intake, scheduling photos, and arranging agent consultation. Which property would you like to focus on?`;
+        }
+        return "I can guide you through the home selling process step by step. What aspect would you like help with?";
+        
+      case USER_INTENTS.TASK_HELP:
+        const incompleteTasks = [];
+        if (taskStatus) {
+          if (!taskStatus.propertyIntake) incompleteTasks.push('Property Intake');
+          if (!taskStatus.photosMedia) incompleteTasks.push('Photos & Media');
+          if (!taskStatus.agentConsultation) incompleteTasks.push('Agent Consultation');
+          if (taskStatus.homeBuyingEnabled && !taskStatus.homeCriteria) incompleteTasks.push('Home Criteria');
+          if (taskStatus.homeBuyingEnabled && !taskStatus.personalFinancials) incompleteTasks.push('Personal Financials');
+        }
+        
+        if (incompleteTasks.length > 0) {
+          return `You have ${incompleteTasks.length} pending tasks: ${incompleteTasks.join(', ')}. I recommend starting with ${incompleteTasks[0]}. Would you like detailed guidance on completing it?`;
+        }
+        return "Excellent! All your main tasks are complete. Your property should be ready for MLS listing. Would you like help with the next steps?";
+        
+      case USER_INTENTS.MARKET_INFO:
+        let marketResponse = "I can provide market insights for your area. ";
+        if (property && property.location && property.location !== 'Property data unavailable') {
+          marketResponse += `Based on your property location at ${property.location}, `;
+        }
+        marketResponse += "current market conditions are generally favorable for sellers. Would you like specific pricing strategies or local market trends?";
+        return marketResponse;
+        
+      default:
+        let greeting = user && user.name && user.name !== 'User' ? `Hi ${user.name}! ` : "Hello! ";
+        greeting += "I'm your AirCasa AI assistant with premium features including OpenAI intelligence and ElevenLabs voice synthesis. ";
+        if (userProperties && userProperties.length > 0) {
+          greeting += `I can help with your ${userProperties.length} property(ies) and guide you through the selling process. `;
+        }
+        greeting += "How can I assist you today?";
+        return greeting;
+    }
+  }
+
   /**
    * VOICE PROCESSING
    */
@@ -342,27 +465,33 @@ Provide helpful, concise responses about real estate, property selling, and usin
   async generateVoiceResponse(text) {
     try {
       if (!this.shouldGenerateVoice()) {
+        console.log('🔇 Voice generation skipped - not enabled');
         return null;
       }
 
-      console.log('🔊 Generating voice response for:', text.substring(0, 50) + '...');
+      console.log('🔊 Generating premium voice response with ElevenLabs/Browser TTS fallback');
+      console.log('📝 Text length:', text.length, 'characters');
 
-      // Use the enhanced voice generation with ElevenLabs fallback
+      // Enhanced voice options with premium settings
       const voiceOptions = {
         voiceId: this.voicePreferences?.preferred_voice_id || AI_CHAT_CONFIG.ELEVENLABS.VOICE_ID,
         rate: this.voicePreferences?.voice_speed || 1.0,
         volume: 1.0,
-        stability: this.voicePreferences?.voice_stability || 0.5,
-        similarity_boost: this.voicePreferences?.voice_clarity || 0.5
+        // ElevenLabs specific settings
+        stability: this.voicePreferences?.voice_stability || AI_CHAT_CONFIG.ELEVENLABS.DEFAULT_VOICE_SETTINGS.stability,
+        similarity_boost: this.voicePreferences?.voice_clarity || AI_CHAT_CONFIG.ELEVENLABS.DEFAULT_VOICE_SETTINGS.similarity_boost,
+        style: this.voicePreferences?.voice_style || AI_CHAT_CONFIG.ELEVENLABS.DEFAULT_VOICE_SETTINGS.style,
+        use_speaker_boost: AI_CHAT_CONFIG.ELEVENLABS.DEFAULT_VOICE_SETTINGS.use_speaker_boost
       };
 
+      // Start voice generation (async - don't wait for completion)
       const success = await voiceService.generateAndPlayVoice(text, voiceOptions);
       
       if (success) {
-        console.log('✅ Voice response generated and playing');
-        return 'voice_generated'; // Indicate voice was generated
+        console.log('✅ Premium voice response initiated successfully');
+        return 'premium_voice_generated';
       } else {
-        console.log('⚠️ Voice generation failed');
+        console.log('⚠️ Voice generation failed, no audio available');
         return null;
       }
       
@@ -441,16 +570,41 @@ Provide helpful, concise responses about real estate, property selling, and usin
   }
 
   generateWelcomeMessage() {
-    const { property, currentPage } = this.userContext || {};
+    const { user, property, userProperties, currentPage } = this.userContext || {};
+    const hasOpenAI = import.meta.env.VITE_OPENAI_API_KEY;
+    const hasElevenLabs = AI_CHAT_CONFIG.ELEVENLABS.API_KEY;
     
-    let contextMessage = '';
+    let greeting = user && user.name && user.name !== 'User' ? `👋 Hi ${user.name}!` : "👋 Hello!";
+    
+    let welcomeMessage = `${greeting} I'm your premium AirCasa AI assistant with advanced capabilities:\n\n`;
+    
+    // Premium features status
+    welcomeMessage += `🧠 ${hasOpenAI ? 'OpenAI GPT Intelligence' : 'Smart Contextual Responses'}\n`;
+    welcomeMessage += `🎵 ${hasElevenLabs ? 'ElevenLabs Premium Voice' : 'Browser Voice Synthesis'}\n`;
+    welcomeMessage += `📊 Dual Airtable Integration for complete context\n`;
+    welcomeMessage += `🎤 Three Voice Modes: Always Listening, Click-to-Talk, Text Only\n\n`;
+    
+    // Context-specific information
     if (currentPage === 'dashboard') {
-      contextMessage = " I can see you're on your dashboard - I'm here to help with your property setup progress.";
-    } else if (currentPage === 'property_details') {
-      contextMessage = " I can help you with your property tasks and answer any questions.";
+      welcomeMessage += "I can see you're on your dashboard. ";
+      if (userProperties && userProperties.length > 0) {
+        welcomeMessage += `I have access to your ${userProperties.length} property(ies) and can help with setup progress.`;
+      } else {
+        welcomeMessage += "I'm ready to help with your property setup and progress tracking.";
+      }
+    } else if (currentPage === 'property_details' && property && property.location !== 'Property data unavailable') {
+      welcomeMessage += `I can help with your property at ${property.location}. `;
+      if (property.marketValue) {
+        welcomeMessage += `This ${property.propertyType || 'property'} valued at $${property.marketValue.toLocaleString()} `;
+      }
+      welcomeMessage += "is ready for my assistance with tasks and guidance.";
+    } else {
+      welcomeMessage += "I'm here to help with property questions, market insights, process guidance, and platform assistance.";
     }
     
-    return `👋 Hi! I'm your AirCasa AI assistant.${contextMessage} How can I help you today?`;
+    welcomeMessage += "\n\nWhat would you like to know about your real estate journey?";
+    
+    return welcomeMessage;
   }
 
   /**
