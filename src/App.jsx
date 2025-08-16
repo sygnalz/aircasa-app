@@ -185,11 +185,9 @@ function ProtectedShell() {
 
   return (
     <AuthGate>
-      <AiChatProvider>
-        <RoleBasedLayout>
-          <Outlet />
-        </RoleBasedLayout>
-      </AiChatProvider>
+      <RoleBasedLayout>
+        <Outlet />
+      </RoleBasedLayout>
     </AuthGate>
   );
 }

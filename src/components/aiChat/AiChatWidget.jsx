@@ -14,10 +14,10 @@ import {
   VolumeX,
   Loader2,
   User,
-  Bot
+  Bot,
+  AlertTriangle
 } from 'lucide-react';
 import { AI_CHAT_CONFIG, WIDGET_STATES, MESSAGE_TYPES } from '@/config/aiChatConfig';
-import aiChatService from '@/services/aiChatService';
 import { useAuth } from '@/contexts/AuthContext';
 
 const AiChatWidget = () => {
@@ -31,6 +31,8 @@ const AiChatWidget = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Refs
   const messagesEndRef = useRef(null);
@@ -40,25 +42,33 @@ const AiChatWidget = () => {
   // Auth context
   const { user } = useAuth();
 
-  // Initialize chat service
+  // Initialize chat service with error handling
   useEffect(() => {
-    if (user) {
-      initializeChat();
-    }
+    const initializeWithErrorHandling = async () => {
+      if (!user) return;
+      
+      try {
+        // Import aiChatService only when needed to avoid initialization errors
+        const { default: aiChatService } = await import('@/services/aiChatService');
+        
+        // Set up event listeners
+        aiChatService.on('messageReceived', handleMessageReceived);
+        aiChatService.on('messageProcessed', handleMessageProcessed);
+        aiChatService.on('processingStarted', () => setIsProcessing(true));
+        aiChatService.on('processingCompleted', () => setIsProcessing(false));
+        aiChatService.on('listeningStarted', () => setIsListening(true));
+        aiChatService.on('listeningStopped', () => setIsListening(false));
 
-    // Set up event listeners
-    aiChatService.on('messageReceived', handleMessageReceived);
-    aiChatService.on('messageProcessed', handleMessageProcessed);
-    aiChatService.on('processingStarted', () => setIsProcessing(true));
-    aiChatService.on('processingCompleted', () => setIsProcessing(false));
-    aiChatService.on('listeningStarted', () => setIsListening(true));
-    aiChatService.on('listeningStopped', () => setIsListening(false));
-
-    return () => {
-      // Cleanup event listeners
-      aiChatService.off('messageReceived', handleMessageReceived);
-      aiChatService.off('messageProcessed', handleMessageProcessed);
+        await initializeChat(aiChatService);
+        setIsInitialized(true);
+        
+      } catch (error) {
+        console.error('Failed to initialize aiChat:', error);
+        setHasError(true);
+      }
     };
+
+    initializeWithErrorHandling();
   }, [user]);
 
   // Auto-scroll to bottom when new messages arrive
@@ -66,8 +76,8 @@ const AiChatWidget = () => {
     scrollToBottom();
   }, [messages]);
 
-  const initializeChat = async () => {
-    if (!user) return;
+  const initializeChat = async (aiChatService) => {
+    if (!user || !aiChatService) return;
 
     try {
       const propertyId = getCurrentPropertyId();
@@ -78,6 +88,7 @@ const AiChatWidget = () => {
       }
     } catch (error) {
       console.error('Failed to initialize chat:', error);
+      setHasError(true);
     }
   };
 
@@ -128,7 +139,7 @@ const AiChatWidget = () => {
   };
 
   const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isProcessing) return;
+    if (!inputMessage.trim() || isProcessing || !isInitialized) return;
 
     const userMessage = {
       id: `msg_${Date.now()}`,
@@ -141,6 +152,7 @@ const AiChatWidget = () => {
     setInputMessage('');
 
     try {
+      const { default: aiChatService } = await import('@/services/aiChatService');
       await aiChatService.processUserMessage(userMessage.text);
     } catch (error) {
       console.error('Failed to process message:', error);
@@ -162,14 +174,22 @@ const AiChatWidget = () => {
   };
 
   const toggleVoiceListening = async () => {
-    if (isListening) {
-      aiChatService.stopListening();
-    } else {
-      try {
-        await aiChatService.startListening();
-      } catch (error) {
-        alert('Microphone access required for voice features');
+    if (!isInitialized) return;
+    
+    try {
+      const { default: aiChatService } = await import('@/services/aiChatService');
+      
+      if (isListening) {
+        aiChatService.stopListening();
+      } else {
+        try {
+          await aiChatService.startListening();
+        } catch (error) {
+          alert('Microphone access required for voice features');
+        }
       }
+    } catch (error) {
+      console.error('Voice service error:', error);
     }
   };
 
@@ -287,16 +307,28 @@ const AiChatWidget = () => {
     </div>
   );
 
+  // Don't render if there's an error or not initialized
+  if (hasError) {
+    return null; // Silently fail to avoid breaking the main app
+  }
+
   // Minimized state
   if (widgetState === WIDGET_STATES.MINIMIZED) {
     return (
       <div className="fixed bottom-6 right-6 z-50">
         <button
           onClick={toggleWidget}
-          className="w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group"
+          className={`w-14 h-14 text-white rounded-full shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-center group ${
+            isInitialized ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-400 cursor-not-allowed'
+          }`}
+          disabled={!isInitialized}
         >
-          <MessageCircle className="h-6 w-6" />
-          {isProcessing && (
+          {!isInitialized ? (
+            <Loader2 className="h-6 w-6 animate-spin" />
+          ) : (
+            <MessageCircle className="h-6 w-6" />
+          )}
+          {isProcessing && isInitialized && (
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse" />
           )}
         </button>
