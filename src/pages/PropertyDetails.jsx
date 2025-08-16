@@ -111,7 +111,14 @@ const TaskListPanel = ({ property, onOpenForm, onTaskComplete }) => {
                         size="sm" 
                         variant="outline"
                         className="text-xs py-1 px-3 h-7 border-gray-300 hover:bg-gray-50"
-                        onClick={() => onTaskComplete(task.completionField)}
+                        onClick={() => {
+                          console.log('🔄 TaskListPanel Mark Complete clicked:', task.completionField);
+                          if (onTaskComplete) {
+                            onTaskComplete(task.completionField);
+                          } else {
+                            console.error('❌ onTaskComplete function not available');
+                          }
+                        }}
                       >
                         Mark Complete
                       </Button>
@@ -178,31 +185,41 @@ const HomeBuyingTasks = ({ property, onOpenForm, onTaskComplete, onToggleBuyingH
   return (
     <Card className="bg-green-50 border-green-200">
       <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-lg text-green-800">
-          <Home className="h-5 w-5" />
-          Home Buying Tasks
+        <CardTitle className="flex items-center justify-between text-lg text-green-800">
+          <div className="flex items-center gap-2">
+            <Home className="h-5 w-5" />
+            Home Buying Tasks
+          </div>
           <button
             onClick={() => onToggleBuyingHome(false)}
-            className="ml-auto bg-green-100 hover:bg-green-200 text-green-800 border-green-300 px-3 py-1 rounded-full text-xs font-medium transition-colors"
+            className="bg-green-100 hover:bg-green-200 text-green-800 border border-green-300 px-3 py-1 rounded-full text-xs font-medium transition-colors"
           >
-            ✓ I am buying a home
+            ✓ Enabled
           </button>
         </CardTitle>
       </CardHeader>
       
       <CardContent className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          {tasks.map((task) => (
-            <div key={task.id} className="bg-green-100 p-4 rounded-lg">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="h-4 w-4 text-green-600 mt-1" />
-                <div className="flex-1 space-y-2">
-                  <p className="text-sm font-medium text-green-900">
+        {tasks.map((task, index) => (
+          <div key={task.id} className="space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-1">
+                {task.completed ? (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Clock className="h-4 w-4 text-gray-400" />
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <div>
+                  <p className={`text-sm font-medium ${task.completed ? 'text-green-800' : 'text-green-900'}`}>
                     {task.title}
                   </p>
                   <p className="text-xs text-green-700">
                     {task.description}
                   </p>
+                </div>
+                {!task.completed && (
                   <div className="flex gap-2 flex-wrap">
                     <Button 
                       size="sm" 
@@ -211,22 +228,28 @@ const HomeBuyingTasks = ({ property, onOpenForm, onTaskComplete, onToggleBuyingH
                     >
                       {task.actionText}
                     </Button>
-                    {task.completionField && !task.completed && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="text-xs py-1 px-3 h-7 border-green-300 hover:bg-green-50"
-                        onClick={() => onTaskComplete(task.completionField)}
-                      >
-                        Mark Complete
-                      </Button>
-                    )}
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="text-xs py-1 px-3 h-7 border-green-300 hover:bg-green-50"
+                      onClick={() => {
+                        console.log('🔄 HomeBuyingTasks Mark Complete clicked:', task.completionField);
+                        if (onTaskComplete) {
+                          onTaskComplete(task.completionField);
+                        } else {
+                          console.error('❌ onTaskComplete function not available');
+                        }
+                      }}
+                    >
+                      Mark Complete
+                    </Button>
                   </div>
-                </div>
+                )}
               </div>
             </div>
-          ))}
-        </div>
+            {index < tasks.length - 1 && <Separator />}
+          </div>
+        ))}
       </CardContent>
     </Card>
   );
@@ -330,24 +353,31 @@ export default function PropertyDetails() {
   };
 
   const markTaskComplete = async (completionField) => {
-    if (updating) return;
+    if (updating) {
+      console.log('⏳ Update already in progress, skipping');
+      return;
+    }
     
     try {
       setUpdating(true);
-      console.log('🔄 Marking task complete:', completionField);
+      console.log('🔄 markTaskComplete called with:', completionField);
+      console.log('🔄 Current property data:', property);
       
       const updatedPropertyData = {
         ...property,
         [completionField]: true
       };
       
+      console.log('🔄 Updated property data to send:', updatedPropertyData);
+      
       const updatedProperty = await properties.update(propertyId, updatedPropertyData);
       setProperty(updatedProperty);
       
-      console.log('✅ Task marked as complete:', completionField);
+      console.log('✅ Task marked as complete successfully:', completionField);
+      console.log('✅ Updated property received:', updatedProperty);
     } catch (error) {
       console.error('❌ Error marking task complete:', error);
-      // Optionally show user feedback here
+      alert(`Error updating task: ${error.message}`);
     } finally {
       setUpdating(false);
     }
