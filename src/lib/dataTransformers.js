@@ -78,6 +78,14 @@ export function transformProperty(airtableRecord) {
       lastUpdated: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'lastUpdated'),
       purchaseDate: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'purchaseDate'),
       
+      // Milestone Task Completion Fields
+      completedIntake: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'completedIntake'),
+      photosCompleted: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'photosCompleted'),
+      consultationCompleted: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'consultationCompleted'),
+      isBuyingHome: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'isBuyingHome'),
+      homeCriteriaCompleted: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'homeCriteriaCompleted'),
+      personalFinancialCompleted: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'personalFinancialCompleted'),
+      
       // System Fields
       _createdTime: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, '_createdTime') || airtableRecord._createdTime,
       _recordId: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, '_recordId') || airtableRecord.id
@@ -174,92 +182,127 @@ export function transformUser(airtableRecord) {
 
 // NOTE: transformRole function removed - Roles table doesn't exist in the user's Airtable base
 
-// Transform app property format to Airtable format
-export function transformPropertyForAirtable(appProperty) {
+// Transform app property format to Airtable format - with selective field mapping
+export function transformPropertyForAirtable(appProperty, options = {}) {
   console.log('🔄 Transforming property data for Airtable:', JSON.stringify(appProperty, null, 2));
+  console.log('🔄 Transform options:', options);
   
-  const transformed = {
-    // Core property fields (confirmed to exist in Airtable schema)
-    app_address: appProperty.address,
-    app_street: appProperty.street,
-    app_city: appProperty.city,
-    app_state: appProperty.state,
-    app_zip_code: appProperty.zip_code,
-    app_property_type: appProperty.property_type,
-    app_bedrooms: appProperty.bedrooms,
-    app_bathrooms: appProperty.bathrooms,
-    app_estimated_value: appProperty.estimated_value,
-    app_image_url: appProperty.image_url,
-    
-    // User information fields (confirmed to exist)
-    app_owner_user_id: appProperty.app_owner_user_id,
-    app_first_name: appProperty.first_name || '',
-    app_last_name: appProperty.last_name || '',
-    app_email: appProperty.email,
-    app_phone: appProperty.phone || '',
-    is_buying_a_home: appProperty.isBuyingHome || false,
-    app_referred_by: appProperty.referred_by || '',
-    
-    // Task completion fields (using correct Airtable field names)
-    ...(appProperty.completedIntake !== undefined && { property_intake_completed: appProperty.completedIntake }),
-    ...(appProperty.photosCompleted !== undefined && { photos_completed: appProperty.photosCompleted }),
-    ...(appProperty.consultationCompleted !== undefined && { consultation_completed: appProperty.consultationCompleted }),
-    ...(appProperty.homeCriteriaCompleted !== undefined && { home_criteria_main_completed: appProperty.homeCriteriaCompleted }),
-    ...(appProperty.personalFinancialCompleted !== undefined && { personal_financial_completed: appProperty.personalFinancialCompleted }),
-    
-    // ATTOM Data fields - Core ATTOM ID (always include if available)
-    ...(appProperty.attom_id && { attom_id: appProperty.attom_id }),
-    
-    // ATTOM Address fields from expandedprofile endpoint (following PDF protocol)
-    ...(appProperty.attom_street_address && { attom_sell_property_address_street: appProperty.attom_street_address }),
-    ...(appProperty.attom_city && { attom_sell_property_address_city: appProperty.attom_city }),
-    ...(appProperty.attom_state && { attom_sell_property_address_state: appProperty.attom_state }),
-    ...(appProperty.attom_zip && { attom_sell_property_address_zip: appProperty.attom_zip }),
-    ...(appProperty.attom_country && { attom_sell_property_address_country: appProperty.attom_country }),
-    ...(appProperty.attom_subdivision && { attom_sell_property_subdvision_name: appProperty.attom_subdivision }),
-    ...(appProperty.attom_municipality && { attom_sell_property_municipality_name: appProperty.attom_municipality }),
-    ...(appProperty.attom_county && { attom_sell_property_county: appProperty.attom_county }),
-    
-    // ATTOM Property characteristics from expandedprofile
-    ...(appProperty.attom_use_type && { attom_sell_property_use_type: appProperty.attom_use_type }),
-    ...(appProperty.attom_year_built && { attom_sell_property_year_built: Number(appProperty.attom_year_built) }),
-    ...(appProperty.attom_levels && { attom_sell_property_levels: Number(appProperty.attom_levels) }),
-    ...(appProperty.attom_finished_sf && { attom_sell_property_finished_sf: Number(appProperty.attom_finished_sf) }),
-    ...(appProperty.attom_siding && { attom_sell_property_siding: appProperty.attom_siding }),
-    ...(appProperty.attom_roof_type && { attom_sell_property_roof_type: appProperty.attom_roof_type }),
-    ...(appProperty.attom_central_air && { attom_sell_property_central_air: appProperty.attom_central_air }),
-    ...(appProperty.attom_heating_type && { attom_sell_property_heating_type: appProperty.attom_heating_type }),
-    ...(appProperty.attom_heating_fuel && { attom_sell_property_heating_fuel_type: appProperty.attom_heating_fuel }),
-    ...(appProperty.attom_fireplace_number && { attom_sell_property_fireplace_number: Number(appProperty.attom_fireplace_number) }),
-    ...(appProperty.attom_lot_size && { attom_sell_property_lot_size: Number(appProperty.attom_lot_size) }),
-    ...(appProperty.attom_lot_zoning && { attom_sell_property_lot_zoning: appProperty.attom_lot_zoning }),
-    ...(appProperty.attom_mortgage_amount && { attom_sell_property_mortgage_amount: Number(appProperty.attom_mortgage_amount) }),
-    ...(appProperty.attom_2nd_mortgage && { attom_sell_property_2nd_mortgage_amount: Number(appProperty.attom_2nd_mortgage) }),
-    
-    // ATTOM Fields from assessment/detail endpoint
-    ...(appProperty.attom_architectural_style && { attom_sell_property_architectural_style: appProperty.attom_architectural_style }),
-    ...(appProperty.attom_water_source && { attom_sell_property_water_source: appProperty.attom_water_source }),
-    ...(appProperty.attom_sewer_type && { attom_sell_property_sewer_type: appProperty.attom_sewer_type }),
-    ...(appProperty.attom_pool_type && { attom_sell_property_pool_type: appProperty.attom_pool_type }),
-    ...(appProperty.attom_garage && { attom_sell_property_garage: appProperty.attom_garage }),
-    ...(appProperty.attom_flooring && { attom_sell_property_flooring_types: appProperty.attom_flooring }),
-    ...(appProperty.attom_taxes && { attom_sell_property_taxes: Number(appProperty.attom_taxes) }),
-    ...(appProperty.attom_designated_historic && { attom_sell_property_designated_historic: appProperty.attom_designated_historic }),
-    
-    // ATTOM Legal and tax fields
-    ...(appProperty.attom_legal_desc1 && { attom_property_legal_description1: appProperty.attom_legal_desc1 }),
-    ...(appProperty.attom_legal_desc2 && { attom_property_legal_description2: appProperty.attom_legal_desc2 }),
-    ...(appProperty.attom_legal_desc3 && { attom_property_legal_description3: appProperty.attom_legal_desc3 }),
-    ...(appProperty.attom_tax_id && { attom_property_tax_id: appProperty.attom_tax_id }),
-    
-    // ATTOM School data from detailwithschools endpoint  
-    ...(appProperty.attom_school_district && { attom_sell_property_school_district: appProperty.attom_school_district }),
-    ...(appProperty.attom_elementary_school && { attom_sell_property_school_district_elementary: appProperty.attom_elementary_school }),
-    ...(appProperty.attom_middle_school && { attom_sell_property_school_district_middle: appProperty.attom_middle_school }),
-    ...(appProperty.attom_high_school && { attom_sell_property_school_district_high: appProperty.attom_high_school })
-  };
+  const transformed = {};
   
-  console.log('✅ Transformed property data (without Name field):', JSON.stringify(transformed, null, 2));
+  // If we're doing a selective update (only specific fields changed)
+  if (options.onlyChangedFields && options.changedFields) {
+    console.log('🔄 Selective field update mode - only transforming:', options.changedFields);
+    
+    // Create a mapping of app fields to Airtable fields for milestone tasks
+    const taskFieldMappings = {
+      completedIntake: 'property_intake_completed',
+      photosCompleted: 'photos_completed', 
+      consultationCompleted: 'consultation_completed',
+      isBuyingHome: 'is_buying_a_home',
+      homeCriteriaCompleted: 'home_criteria_main_completed',
+      personalFinancialCompleted: 'personal_financial_completed'
+    };
+    
+    // Only transform the fields that were actually changed
+    for (const changedField of options.changedFields) {
+      if (taskFieldMappings[changedField] && appProperty.hasOwnProperty(changedField)) {
+        transformed[taskFieldMappings[changedField]] = appProperty[changedField];
+        console.log(`🔄 Mapped ${changedField} -> ${taskFieldMappings[changedField]} = ${appProperty[changedField]}`);
+      } else if (appProperty.hasOwnProperty(changedField)) {
+        // For non-task fields, use the field name as-is or apply standard mappings
+        transformed[changedField] = appProperty[changedField];
+        console.log(`🔄 Direct mapping ${changedField} = ${appProperty[changedField]}`);
+      }
+    }
+    
+    console.log('✅ Selective transformation result:', JSON.stringify(transformed, null, 2));
+    return transformed;
+  }
+  
+  // Full transformation mode (for property creation or complete updates)
+  console.log('🔄 Full transformation mode');
+  
+  // Core property fields (confirmed to exist in Airtable schema)
+  if (appProperty.address !== undefined) transformed.app_address = appProperty.address;
+  if (appProperty.street !== undefined) transformed.app_street = appProperty.street;
+  if (appProperty.city !== undefined) transformed.app_city = appProperty.city;
+  if (appProperty.state !== undefined) transformed.app_state = appProperty.state;
+  if (appProperty.zip_code !== undefined) transformed.app_zip_code = appProperty.zip_code;
+  if (appProperty.property_type !== undefined) transformed.app_property_type = appProperty.property_type;
+  if (appProperty.bedrooms !== undefined) transformed.app_bedrooms = appProperty.bedrooms;
+  if (appProperty.bathrooms !== undefined) transformed.app_bathrooms = appProperty.bathrooms;
+  if (appProperty.estimated_value !== undefined) transformed.app_estimated_value = appProperty.estimated_value;
+  if (appProperty.image_url !== undefined) transformed.app_image_url = appProperty.image_url;
+  
+  // User information fields (confirmed to exist)
+  if (appProperty.app_owner_user_id !== undefined) transformed.app_owner_user_id = appProperty.app_owner_user_id;
+  if (appProperty.first_name !== undefined) transformed.app_first_name = appProperty.first_name || '';
+  if (appProperty.last_name !== undefined) transformed.app_last_name = appProperty.last_name || '';
+  if (appProperty.email !== undefined) transformed.app_email = appProperty.email;
+  if (appProperty.phone !== undefined) transformed.app_phone = appProperty.phone || '';
+  if (appProperty.is_buying_home !== undefined) transformed.app_is_buying_home = appProperty.is_buying_home || false;
+  if (appProperty.referred_by !== undefined) transformed.app_referred_by = appProperty.referred_by || '';
+  
+  // Milestone Task Completion Fields (using exact Airtable field names) - only in full mode
+  if (appProperty.completedIntake !== undefined) transformed.property_intake_completed = appProperty.completedIntake || false;
+  if (appProperty.photosCompleted !== undefined) transformed.photos_completed = appProperty.photosCompleted || false;
+  if (appProperty.consultationCompleted !== undefined) transformed.consultation_completed = appProperty.consultationCompleted || false;
+  if (appProperty.isBuyingHome !== undefined) transformed.is_buying_a_home = appProperty.isBuyingHome || false;
+  if (appProperty.homeCriteriaCompleted !== undefined) transformed.home_criteria_main_completed = appProperty.homeCriteriaCompleted || false;
+  if (appProperty.personalFinancialCompleted !== undefined) transformed.personal_financial_completed = appProperty.personalFinancialCompleted || false;
+    
+  // ATTOM Data fields - Core ATTOM ID (always include if available)
+  if (appProperty.attom_id !== undefined) transformed.attom_id = appProperty.attom_id;
+    
+  // ATTOM Address fields from expandedprofile endpoint (following PDF protocol)
+  if (appProperty.attom_street_address !== undefined) transformed.attom_sell_property_address_street = appProperty.attom_street_address;
+  if (appProperty.attom_city !== undefined) transformed.attom_sell_property_address_city = appProperty.attom_city;
+  if (appProperty.attom_state !== undefined) transformed.attom_sell_property_address_state = appProperty.attom_state;
+  if (appProperty.attom_zip !== undefined) transformed.attom_sell_property_address_zip = appProperty.attom_zip;
+  if (appProperty.attom_country !== undefined) transformed.attom_sell_property_address_country = appProperty.attom_country;
+  if (appProperty.attom_subdivision !== undefined) transformed.attom_sell_property_subdvision_name = appProperty.attom_subdivision;
+  if (appProperty.attom_municipality !== undefined) transformed.attom_sell_property_municipality_name = appProperty.attom_municipality;
+  if (appProperty.attom_county !== undefined) transformed.attom_sell_property_county = appProperty.attom_county;
+    
+  // ATTOM Property characteristics from expandedprofile
+  if (appProperty.attom_use_type !== undefined) transformed.attom_sell_property_use_type = appProperty.attom_use_type;
+  if (appProperty.attom_year_built !== undefined) transformed.attom_sell_property_year_built = Number(appProperty.attom_year_built);
+  if (appProperty.attom_levels !== undefined) transformed.attom_sell_property_levels = Number(appProperty.attom_levels);
+  if (appProperty.attom_finished_sf !== undefined) transformed.attom_sell_property_finished_sf = Number(appProperty.attom_finished_sf);
+  if (appProperty.attom_siding !== undefined) transformed.attom_sell_property_siding = appProperty.attom_siding;
+  if (appProperty.attom_roof_type !== undefined) transformed.attom_sell_property_roof_type = appProperty.attom_roof_type;
+  if (appProperty.attom_central_air !== undefined) transformed.attom_sell_property_central_air = appProperty.attom_central_air;
+  if (appProperty.attom_heating_type !== undefined) transformed.attom_sell_property_heating_type = appProperty.attom_heating_type;
+  if (appProperty.attom_heating_fuel !== undefined) transformed.attom_sell_property_heating_fuel_type = appProperty.attom_heating_fuel;
+  if (appProperty.attom_fireplace_number !== undefined) transformed.attom_sell_property_fireplace_number = Number(appProperty.attom_fireplace_number);
+  if (appProperty.attom_lot_size !== undefined) transformed.attom_sell_property_lot_size = Number(appProperty.attom_lot_size);
+  if (appProperty.attom_lot_zoning !== undefined) transformed.attom_sell_property_lot_zoning = appProperty.attom_lot_zoning;
+  if (appProperty.attom_mortgage_amount !== undefined) transformed.attom_sell_property_mortgage_amount = Number(appProperty.attom_mortgage_amount);
+  if (appProperty.attom_2nd_mortgage !== undefined) transformed.attom_sell_property_2nd_mortgage_amount = Number(appProperty.attom_2nd_mortgage);
+    
+  // ATTOM Fields from assessment/detail endpoint
+  if (appProperty.attom_architectural_style !== undefined) transformed.attom_sell_property_architectural_style = appProperty.attom_architectural_style;
+  if (appProperty.attom_water_source !== undefined) transformed.attom_sell_property_water_source = appProperty.attom_water_source;
+  if (appProperty.attom_sewer_type !== undefined) transformed.attom_sell_property_sewer_type = appProperty.attom_sewer_type;
+  if (appProperty.attom_pool_type !== undefined) transformed.attom_sell_property_pool_type = appProperty.attom_pool_type;
+  if (appProperty.attom_garage !== undefined) transformed.attom_sell_property_garage = appProperty.attom_garage;
+  if (appProperty.attom_flooring !== undefined) transformed.attom_sell_property_flooring_types = appProperty.attom_flooring;
+  if (appProperty.attom_taxes !== undefined) transformed.attom_sell_property_taxes = Number(appProperty.attom_taxes);
+  if (appProperty.attom_designated_historic !== undefined) transformed.attom_sell_property_designated_historic = appProperty.attom_designated_historic;
+    
+  // ATTOM Legal and tax fields
+  if (appProperty.attom_legal_desc1 !== undefined) transformed.attom_property_legal_description1 = appProperty.attom_legal_desc1;
+  if (appProperty.attom_legal_desc2 !== undefined) transformed.attom_property_legal_description2 = appProperty.attom_legal_desc2;
+  if (appProperty.attom_legal_desc3 !== undefined) transformed.attom_property_legal_description3 = appProperty.attom_legal_desc3;
+  if (appProperty.attom_tax_id !== undefined) transformed.attom_property_tax_id = appProperty.attom_tax_id;
+    
+  // ATTOM School data from detailwithschools endpoint  
+  if (appProperty.attom_school_district !== undefined) transformed.attom_sell_property_school_district = appProperty.attom_school_district;
+  if (appProperty.attom_elementary_school !== undefined) transformed.attom_sell_property_school_district_elementary = appProperty.attom_elementary_school;
+  if (appProperty.attom_middle_school !== undefined) transformed.attom_sell_property_school_district_middle = appProperty.attom_middle_school;
+  if (appProperty.attom_high_school !== undefined) transformed.attom_sell_property_school_district_high = appProperty.attom_high_school;
+  
+  console.log('✅ Transformed property data:', JSON.stringify(transformed, null, 2));
   return transformed;
 }
 

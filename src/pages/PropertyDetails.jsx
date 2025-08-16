@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import FilloutFormModal from '@/components/property/FilloutFormModal';
 import { 
   ArrowLeft, 
   Home, 
@@ -21,32 +22,36 @@ import {
   Calendar
 } from 'lucide-react';
 
-const TaskListPanel = ({ property }) => {
-  // Task completion logic based on property data
+const TaskListPanel = ({ property, onOpenForm, onToggleTaskComplete }) => {
+  // Task completion logic based on property data from Airtable
   const tasks = [
     {
       id: 'property-intake',
       title: 'Complete Property Intake',
       description: 'Fill out detailed property information',
-      completed: !!(property.description && property.bedrooms && property.bathrooms),
+      completed: !!(property.completedIntake),
       actionText: 'Fill Out Form',
-      actionColor: 'bg-blue-600 hover:bg-blue-700'
+      actionColor: 'bg-blue-600 hover:bg-blue-700',
+      action: () => onOpenForm('intake'),
+      completionField: 'completedIntake'
     },
     {
       id: 'photos-media',
       title: 'Upload Photos & Media',
       description: 'Professional photos and virtual tour',
-      completed: !!(property.images && property.images.length > 0),
+      completed: !!(property.photosCompleted),
       actionText: 'Order Services',
-      actionColor: 'bg-green-600 hover:bg-green-700'
+      actionColor: 'bg-green-600 hover:bg-green-700',
+      completionField: 'photosCompleted'
     },
     {
       id: 'agent-consultation',
       title: 'Schedule Agent Consultation',
       description: 'Meet with your real estate agent',
-      completed: false, // This would come from actual booking data
+      completed: !!(property.consultationCompleted),
       actionText: 'Schedule Now',
-      actionColor: 'bg-purple-600 hover:bg-purple-700'
+      actionColor: 'bg-purple-600 hover:bg-purple-700',
+      completionField: 'consultationCompleted'
     }
   ];
 
@@ -92,14 +97,38 @@ const TaskListPanel = ({ property }) => {
                     {task.description}
                   </p>
                 </div>
-                {!task.completed && (
-                  <Button 
-                    size="sm" 
-                    className={`text-xs py-1 px-3 h-7 ${task.actionColor} text-white`}
-                  >
-                    {task.actionText}
-                  </Button>
-                )}
+                <div className="flex gap-2 flex-wrap">
+                  {!task.completed && task.action && (
+                    <Button 
+                      size="sm" 
+                      className={`text-xs py-1 px-3 h-7 ${task.actionColor} text-white`}
+                      onClick={task.action}
+                    >
+                      {task.actionText}
+                    </Button>
+                  )}
+                  {task.completionField && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className={`text-xs py-1 px-3 h-7 ${
+                        task.completed 
+                          ? 'border-red-300 text-red-700 hover:bg-red-50' 
+                          : 'border-gray-300 hover:bg-gray-50'
+                      }`}
+                      onClick={() => {
+                        console.log('🔄 TaskListPanel Toggle Complete clicked:', task.completionField, 'current:', task.completed);
+                        if (onToggleTaskComplete) {
+                          onToggleTaskComplete(task.completionField, task.completed);
+                        } else {
+                          console.error('❌ onToggleTaskComplete function not available');
+                        }
+                      }}
+                    >
+                      {task.completed ? 'Mark Incomplete' : 'Mark Complete'}
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
             {index < tasks.length - 1 && <Separator />}
@@ -110,60 +139,147 @@ const TaskListPanel = ({ property }) => {
   );
 };
 
-const HomeBuyingTasks = () => {
+const HomeBuyingTasks = ({ property, onOpenForm, onToggleTaskComplete, onToggleBuyingHome }) => {
+  // Only show if user is buying a home
+  if (!property?.isBuyingHome) {
+    return (
+      <Card className="bg-green-50 border-green-200">
+        <CardContent className="p-6 text-center">
+          <div className="space-y-4">
+            <Home className="h-12 w-12 text-green-600 mx-auto" />
+            <div>
+              <h3 className="text-lg font-medium text-green-900">Home Buying Tasks</h3>
+              <p className="text-sm text-green-700 mt-2">
+                Enable home buying tasks if you're also purchasing a new home
+              </p>
+            </div>
+            <button
+              onClick={() => onToggleBuyingHome(true)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+            >
+              I am buying a home
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const tasks = [
     {
       id: 'home-criteria',
       title: 'Complete Home Criteria',
       description: 'Define your ideal home preferences',
-      completed: false,
-      actionText: 'Fill Out Form'
+      completed: !!(property.homeCriteriaCompleted),
+      actionText: 'Fill Out Form',
+      action: () => onOpenForm('home_criteria'),
+      completionField: 'homeCriteriaCompleted'
     },
     {
       id: 'personal-financials',
       title: 'Complete Personal Financials',
       description: 'Provide financial information for pre-approval',
-      completed: false,
-      actionText: 'Fill Out Form'
+      completed: !!(property.personalFinancialCompleted),
+      actionText: 'Fill Out Form',
+      action: () => onOpenForm('financial'),
+      completionField: 'personalFinancialCompleted'
     }
   ];
 
   return (
     <Card className="bg-green-50 border-green-200">
       <CardHeader className="pb-4">
-        <CardTitle className="flex items-center gap-2 text-lg text-green-800">
-          <Home className="h-5 w-5" />
-          Home Buying Tasks
-          <Badge className="ml-auto bg-green-100 text-green-800 border-green-300">
-            I am buying a home
-          </Badge>
+        <CardTitle className="flex items-center justify-between text-lg text-green-800">
+          <div className="flex items-center gap-2">
+            <Home className="h-5 w-5" />
+            Home Buying Tasks
+          </div>
+          <button
+            onClick={() => onToggleBuyingHome(false)}
+            className="bg-green-100 hover:bg-green-200 text-green-800 border border-green-300 px-3 py-1 rounded-full text-xs font-medium transition-colors"
+          >
+            ✓ Enabled
+          </button>
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          {tasks.map((task) => (
-            <div key={task.id} className="bg-green-100 p-4 rounded-lg">
-              <div className="flex items-start gap-3">
-                <CheckCircle className="h-4 w-4 text-green-600 mt-1" />
-                <div className="flex-1 space-y-2">
-                  <p className="text-sm font-medium text-green-900">
+      <CardContent className={`space-y-4 transition-all duration-200 ${
+        isEnabled ? '' : 'pointer-events-none'
+      }`}>
+        {tasks.map((task, index) => (
+          <div key={task.id} className="space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 mt-1">
+                {task.completed ? (
+                  <CheckCircle className={`h-4 w-4 ${
+                    isEnabled ? 'text-green-600' : 'text-gray-400'
+                  }`} />
+                ) : (
+                  <Clock className="h-4 w-4 text-gray-400" />
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <div>
+                  <p className={`text-sm font-medium ${
+                    isEnabled 
+                      ? (task.completed ? 'text-green-800' : 'text-green-900')
+                      : 'text-gray-500'
+                  }`}>
                     {task.title}
                   </p>
-                  <p className="text-xs text-green-700">
+                  <p className={`text-xs ${
+                    isEnabled ? 'text-green-700' : 'text-gray-400'
+                  }`}>
                     {task.description}
                   </p>
-                  <Button 
-                    size="sm" 
-                    className="bg-green-600 hover:bg-green-700 text-white text-xs py-1 px-3 h-7"
-                  >
-                    {task.actionText}
-                  </Button>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {!task.completed && task.action && isEnabled && (
+                    <Button 
+                      size="sm" 
+                      className="bg-green-600 hover:bg-green-700 text-white text-xs py-1 px-3 h-7"
+                      onClick={task.action}
+                    >
+                      {task.actionText}
+                    </Button>
+                  )}
+                  {task.completionField && isEnabled && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className={`text-xs py-1 px-3 h-7 ${
+                        task.completed 
+                          ? 'border-red-300 text-red-700 hover:bg-red-50' 
+                          : 'border-green-300 hover:bg-green-50'
+                      }`}
+                      onClick={() => {
+                        console.log('🔄 HomeBuyingTasks Toggle Complete clicked:', task.completionField, 'current:', task.completed);
+                        if (onToggleTaskComplete) {
+                          onToggleTaskComplete(task.completionField, task.completed);
+                        } else {
+                          console.error('❌ onToggleTaskComplete function not available');
+                        }
+                      }}
+                    >
+                      {task.completed ? 'Mark Incomplete' : 'Mark Complete'}
+                    </Button>
+                  )}
+                  {task.completionField && !isEnabled && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      disabled
+                      className="text-xs py-1 px-3 h-7 border-gray-300 text-gray-400 cursor-not-allowed"
+                    >
+                      {task.completed ? 'Mark Incomplete' : 'Mark Complete'}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+            {index < tasks.length - 1 && <Separator />}
+          </div>
+        ))}
       </CardContent>
     </Card>
   );
@@ -174,6 +290,9 @@ export default function PropertyDetails() {
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showFilloutModal, setShowFilloutModal] = useState(false);
+  const [filloutFormUrl, setFilloutFormUrl] = useState("");
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     const loadProperty = async () => {
@@ -208,6 +327,106 @@ export default function PropertyDetails() {
       loadProperty();
     }
   }, [propertyId]);
+
+  const openFilloutForm = (formType) => {
+    console.log('🔍 PropertyDetails openFilloutForm called with:', formType);
+    console.log('🔍 propertyId:', propertyId);
+    
+    // For now, use a demo user ID - in real app this would come from authentication
+    const demoUserId = 'demo-user-123';
+    
+    let url = "";
+    const baseParams = `?app_owner_user_id=${demoUserId}&property_id=${propertyId}`;
+
+    switch (formType) {
+      case 'intake':
+        url = `https://form.fillout.com/t/fziJ5towSGus${baseParams}`;
+        break;
+      case 'home_criteria':
+        url = `https://form.fillout.com/t/home-criteria${baseParams}`;
+        break;
+      case 'financial':
+        url = `https://form.fillout.com/t/personal-financial${baseParams}`;
+        break;
+      default:
+        console.error('❌ Unknown form type:', formType);
+        return;
+    }
+    
+    console.log('✅ Setting form URL:', url);
+    setFilloutFormUrl(url);
+    setShowFilloutModal(true);
+  };
+
+  const toggleBuyingHome = async (value) => {
+    if (updating) return;
+    
+    try {
+      setUpdating(true);
+      console.log('🔄 Toggling buying home status to:', value);
+      
+      const updatedPropertyData = {
+        ...property,
+        isBuyingHome: value
+      };
+      
+      // Specify selective update options
+      const updateOptions = {
+        onlyChangedFields: true,
+        changedFields: ['isBuyingHome']
+      };
+      
+      const updatedProperty = await properties.update(propertyId, updatedPropertyData, updateOptions);
+      setProperty(updatedProperty);
+      
+      console.log('✅ Buying home status updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating buying home status:', error);
+      // Optionally show user feedback here
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const toggleTaskComplete = async (completionField, currentStatus) => {
+    if (updating) {
+      console.log('⏳ Update already in progress, skipping');
+      return;
+    }
+    
+    try {
+      setUpdating(true);
+      const newStatus = !currentStatus;
+      console.log(`🔄 toggleTaskComplete called with: ${completionField}, current: ${currentStatus}, new: ${newStatus}`);
+      console.log('🔄 Current property data:', property);
+      
+      // Create minimal update object with only the changed field
+      const updatedPropertyData = {
+        ...property,
+        [completionField]: newStatus
+      };
+      
+      // Specify selective update options
+      const updateOptions = {
+        onlyChangedFields: true,
+        changedFields: [completionField]
+      };
+      
+      console.log('🔄 Updated property data to send:', updatedPropertyData);
+      console.log('🔄 Update options:', updateOptions);
+      
+      const updatedProperty = await properties.update(propertyId, updatedPropertyData, updateOptions);
+      setProperty(updatedProperty);
+      
+      console.log(`✅ Task ${newStatus ? 'completed' : 'marked incomplete'} successfully:`, completionField);
+      console.log('✅ Updated property received:', updatedProperty);
+    } catch (error) {
+      console.error('❌ Error updating task:', error);
+      alert(`Error updating task: ${error.message}`);
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -273,8 +492,17 @@ export default function PropertyDetails() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Left Sidebar - Task List */}
           <div className="lg:col-span-1 space-y-6">
-            <TaskListPanel property={property} />
-            <HomeBuyingTasks />
+            <TaskListPanel 
+              property={property} 
+              onOpenForm={openFilloutForm} 
+              onToggleTaskComplete={toggleTaskComplete}
+            />
+            <HomeBuyingTasks 
+              property={property}
+              onOpenForm={openFilloutForm} 
+              onToggleTaskComplete={toggleTaskComplete}
+              onToggleBuyingHome={toggleBuyingHome}
+            />
           </div>
 
           {/* Main Content */}
@@ -346,6 +574,15 @@ export default function PropertyDetails() {
           </div>
         </div>
       </div>
+
+      {/* Fillout Form Modal */}
+      {showFilloutModal && (
+        <FilloutFormModal
+          isOpen={showFilloutModal}
+          onClose={() => setShowFilloutModal(false)}
+          formUrl={filloutFormUrl}
+        />
+      )}
     </div>
   );
 }
