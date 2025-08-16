@@ -26,7 +26,7 @@ const AiChatWidget = () => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [voiceMode, setVoiceMode] = useState(AI_CHAT_CONFIG.VOICE_MODES.TEXT_ONLY);
+  const [voiceMode, setVoiceMode] = useState(AI_CHAT_CONFIG.VOICE_MODES.CLICK_TO_TALK);
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);

@@ -78,6 +78,7 @@ class AiChatService {
           auto_play_responses: true, // Enable by default for better UX
           background_listening: false
         };
+        console.log('🎤 Voice preferences set with mode:', voiceMode, 'auto_play:', true);
       }
       
       // Send welcome message
@@ -288,7 +289,11 @@ class AiChatService {
       // Generate voice if enabled
       let audioUrl = null;
       if (this.shouldGenerateVoice()) {
+        console.log('🎵 Starting voice generation for response...');
         audioUrl = await this.generateVoiceResponse(aiResponse);
+        console.log('🎵 Voice generation completed, audioUrl:', audioUrl);
+      } else {
+        console.log('🔇 Voice generation skipped - shouldGenerateVoice() returned false');
       }
 
       const response = {
@@ -514,8 +519,19 @@ Provide helpful, concise responses about real estate, property selling, and usin
    */
 
   shouldGenerateVoice() {
-    return this.voicePreferences?.auto_play_responses && 
-           this.voicePreferences?.preferred_voice_mode !== AI_CHAT_CONFIG.VOICE_MODES.TEXT_ONLY;
+    const autoPlay = this.voicePreferences?.auto_play_responses;
+    const voiceMode = this.voicePreferences?.preferred_voice_mode;
+    const isTextOnly = voiceMode === AI_CHAT_CONFIG.VOICE_MODES.TEXT_ONLY;
+    const shouldGenerate = autoPlay && !isTextOnly;
+    
+    console.log('🔊 Voice generation check:', {
+      autoPlay,
+      voiceMode,
+      isTextOnly,
+      shouldGenerate
+    });
+    
+    return shouldGenerate;
   }
 
   async generateVoiceResponse(text) {
