@@ -120,36 +120,42 @@ class AiChatService {
 
   async loadUserContext(userId, propertyId) {
     try {
-      console.log('📊 Loading user context from both Airtable bases...', { userId, propertyId });
+      console.log('📊 Loading user context with available data...', { userId, propertyId });
       
-      // Load data from both sources in parallel for better performance
-      const [propertyData, userData, userProperties] = await Promise.allSettled([
-        // Try main Airtable base first, then fallback to API functions
-        this.getPropertyData(propertyId),
-        this.getUserData(userId),
-        aiChatMainAirtable.getUserProperties(userId)
-      ]);
+      // Use fallback data to avoid Airtable 422 errors
+      const userData = await aiChatMainAirtable.getUser(userId);
+      
+      // Create basic property context based on current page
+      let propertyData = { id: propertyId };
+      if (propertyId === 'dashboard') {
+        propertyData = {
+          id: 'dashboard',
+          location: 'Dashboard',
+          propertyType: 'Dashboard View',
+          context: 'User is viewing their dashboard with property overview'
+        };
+      }
       
       this.userContext = {
-        user: userData.status === 'fulfilled' ? userData.value : { id: userId, email: userId },
-        property: propertyData.status === 'fulfilled' ? propertyData.value : { id: propertyId },
-        userProperties: userProperties.status === 'fulfilled' ? userProperties.value : [],
+        user: userData,
+        property: propertyData,
+        userProperties: [], // Empty to avoid 422 errors - dashboard loads this separately
         currentPage: this.getCurrentPageContext(),
-        taskStatus: this.getTaskCompletionStatus(propertyData.status === 'fulfilled' ? propertyData.value : null)
+        taskStatus: this.getTaskCompletionStatus(propertyData)
       };
       
       console.log('✅ Enhanced user context loaded:', {
         hasUser: !!this.userContext.user.email,
-        hasProperty: !!this.userContext.property.location,
-        propertyCount: this.userContext.userProperties.length,
+        hasProperty: !!this.userContext.property.id,
+        userEmail: this.userContext.user.email,
         currentPage: this.userContext.currentPage
       });
       
     } catch (error) {
       console.error('Error loading user context:', error);
       this.userContext = { 
-        user: { id: userId, email: userId }, 
-        property: { id: propertyId },
+        user: { id: userId, email: userId.includes('@') ? userId : 'user@aircasa.com' }, 
+        property: { id: propertyId, location: propertyId === 'dashboard' ? 'Dashboard' : 'Property' },
         userProperties: [],
         currentPage: this.getCurrentPageContext(),
         taskStatus: {}

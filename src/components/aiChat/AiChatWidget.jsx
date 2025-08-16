@@ -142,7 +142,7 @@ const AiChatWidget = () => {
 
   const handleMessageReceived = (message) => {
     setMessages(prev => [...prev, {
-      id: `msg_${Date.now()}`,
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: MESSAGE_TYPES.AI,
       text: message.text,
       timestamp: message.timestamp || new Date().toISOString(),
@@ -152,7 +152,7 @@ const AiChatWidget = () => {
 
   const handleMessageProcessed = (response) => {
     setMessages(prev => [...prev, {
-      id: `msg_${Date.now()}`,
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: MESSAGE_TYPES.AI,
       text: response.text,
       timestamp: new Date().toISOString(),
@@ -183,7 +183,7 @@ const AiChatWidget = () => {
     if (!inputMessage.trim() || isProcessing || !isInitialized) return;
 
     const userMessage = {
-      id: `msg_${Date.now()}`,
+      id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       type: MESSAGE_TYPES.USER,
       text: inputMessage.trim(),
       timestamp: new Date().toISOString()
@@ -206,7 +206,7 @@ const AiChatWidget = () => {
       setTimeout(() => {
         const fallbackResponse = getFallbackResponse(userMessage.text);
         setMessages(prev => [...prev, {
-          id: `msg_${Date.now()}_enhanced_fallback`,
+          id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}_fallback`,
           type: MESSAGE_TYPES.AI,
           text: fallbackResponse,
           timestamp: new Date().toISOString(),
