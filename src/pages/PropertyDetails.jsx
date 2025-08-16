@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { properties } from '@/api/functions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ import {
   Calendar
 } from 'lucide-react';
 
-const TaskListPanel = ({ property, onOpenForm, onToggleTaskComplete }) => {
+const TaskListPanel = ({ property, onOpenForm, onToggleTaskComplete, onNavigateToPhotos }) => {
   // Task completion logic based on property data from Airtable
   const tasks = [
     {
@@ -42,7 +42,21 @@ const TaskListPanel = ({ property, onOpenForm, onToggleTaskComplete }) => {
       completed: !!(property.photosCompleted),
       actionText: 'Order Services',
       actionColor: 'bg-green-600 hover:bg-green-700',
-      completionField: 'photosCompleted'
+      completionField: 'photosCompleted',
+      hasMultipleActions: true,
+      actions: [
+        {
+          text: 'Schedule Now',
+          color: 'bg-blue-600 hover:bg-blue-700',
+          action: onNavigateToPhotos
+        },
+        {
+          text: 'Upload',
+          color: 'bg-gray-400 cursor-not-allowed',
+          disabled: true,
+          action: null
+        }
+      ]
     },
     {
       id: 'agent-consultation',
@@ -55,8 +69,25 @@ const TaskListPanel = ({ property, onOpenForm, onToggleTaskComplete }) => {
     }
   ];
 
-  const completedTasks = tasks.filter(task => task.completed).length;
-  const progressPercentage = Math.round((completedTasks / tasks.length) * 100);
+  // Add Home Buying Tasks to progress calculation when home buying is enabled
+  const homeBuyingTasks = [
+    {
+      id: 'home-criteria',
+      title: 'Complete Home Criteria',
+      completed: !!(property.homeCriteriaCompleted)
+    },
+    {
+      id: 'personal-financials',
+      title: 'Complete Personal Financials',
+      completed: !!(property.personalFinancialCompleted)
+    }
+  ];
+
+  // Dynamically include home buying tasks in progress calculation when enabled
+  const isHomeBuyingEnabled = property?.isBuyingHome;
+  const allTasks = isHomeBuyingEnabled ? [...tasks, ...homeBuyingTasks] : tasks;
+  const completedTasks = allTasks.filter(task => task.completed).length;
+  const progressPercentage = Math.round((completedTasks / allTasks.length) * 100);
 
   return (
     <Card className="h-fit">
@@ -68,11 +99,11 @@ const TaskListPanel = ({ property, onOpenForm, onToggleTaskComplete }) => {
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span>Progress</span>
-            <span className="font-medium">{completedTasks} of {tasks.length} tasks completed</span>
+            <span className="font-medium">{completedTasks} of {allTasks.length} tasks completed</span>
           </div>
           <Progress value={progressPercentage} className="h-2" />
           <p className="text-xs text-gray-600">
-            {progressPercentage}%
+            {progressPercentage}% {isHomeBuyingEnabled ? '(including home buying tasks)' : ''}
           </p>
         </div>
       </CardHeader>
@@ -98,14 +129,30 @@ const TaskListPanel = ({ property, onOpenForm, onToggleTaskComplete }) => {
                   </p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                  {!task.completed && task.action && (
-                    <Button 
-                      size="sm" 
-                      className={`text-xs py-1 px-3 h-7 ${task.actionColor} text-white`}
-                      onClick={task.action}
-                    >
-                      {task.actionText}
-                    </Button>
+                  {!task.completed && task.hasMultipleActions && task.actions ? (
+                    // Multiple action buttons for special tasks (like photos-media)
+                    task.actions.map((actionItem, actionIndex) => (
+                      <Button 
+                        key={actionIndex}
+                        size="sm" 
+                        className={`text-xs py-1 px-3 h-7 ${actionItem.color} text-white`}
+                        onClick={actionItem.action}
+                        disabled={actionItem.disabled}
+                      >
+                        {actionItem.text}
+                      </Button>
+                    ))
+                  ) : (
+                    // Single action button for regular tasks
+                    !task.completed && task.action && (
+                      <Button 
+                        size="sm" 
+                        className={`text-xs py-1 px-3 h-7 ${task.actionColor} text-white`}
+                        onClick={task.action}
+                      >
+                        {task.actionText}
+                      </Button>
+                    )
                   )}
                   {task.completionField && (
                     <Button 
@@ -289,6 +336,7 @@ const HomeBuyingTasks = ({ property, onOpenForm, onToggleTaskComplete, onToggleB
 
 export default function PropertyDetails() {
   const { propertyId } = useParams();
+  const navigate = useNavigate();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -475,6 +523,35 @@ export default function PropertyDetails() {
     }).format(amount);
   };
 
+  // Calculate progress completion for MLS listing button (same logic as TaskListPanel)
+  const calculateProgressCompletion = () => {
+    const baseTasks = [
+      { completed: !!(property.completedIntake) },
+      { completed: !!(property.photosCompleted) },
+      { completed: !!(property.consultationCompleted) }
+    ];
+
+    const homeBuyingTasks = [
+      { completed: !!(property.homeCriteriaCompleted) },
+      { completed: !!(property.personalFinancialCompleted) }
+    ];
+
+    const isHomeBuyingEnabled = property?.isBuyingHome;
+    const allTasks = isHomeBuyingEnabled ? [...baseTasks, ...homeBuyingTasks] : baseTasks;
+    const completedTasks = allTasks.filter(task => task.completed).length;
+    const progressPercentage = Math.round((completedTasks / allTasks.length) * 100);
+    
+    return progressPercentage;
+  };
+
+  const progressPercentage = calculateProgressCompletion();
+  const isReadyForMLS = progressPercentage === 100;
+
+  // Navigation handler for photo packages
+  const handleNavigateToPhotos = () => {
+    navigate(`/photo-packages/${propertyId}`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -498,6 +575,7 @@ export default function PropertyDetails() {
               property={property} 
               onOpenForm={openFilloutForm} 
               onToggleTaskComplete={toggleTaskComplete}
+              onNavigateToPhotos={handleNavigateToPhotos}
             />
             <HomeBuyingTasks 
               property={property}
@@ -570,6 +648,34 @@ export default function PropertyDetails() {
                       </div>
                     </div>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* MLS Listing Button */}
+            <Card className="mt-6">
+              <CardContent className="p-6 text-center">
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Ready to List?</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {isReadyForMLS 
+                        ? "All tasks completed! You're ready to list your property on the MLS."
+                        : `Complete all property setup tasks (${progressPercentage}% complete) to list on the MLS.`
+                      }
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => navigate(`/packages/${propertyId}`)}
+                    disabled={!isReadyForMLS}
+                    className={`w-full py-3 text-base font-medium transition-all duration-200 ${
+                      isReadyForMLS
+                        ? 'bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed hover:bg-gray-300'
+                    }`}
+                  >
+                    {isReadyForMLS ? '🏠 List This Property on the MLS' : '🔒 Complete Setup to List Property'}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
