@@ -198,7 +198,7 @@ export function transformPropertyForAirtable(appProperty, options = {}) {
       completedIntake: 'property_intake_completed',
       photosCompleted: 'photos_completed', 
       consultationCompleted: 'consultation_completed',
-      isBuyingHome: 'is_buying_home',
+      isBuyingHome: 'is_buying_a_home',
       homeCriteriaCompleted: 'home_criteria_main_completed',
       personalFinancialCompleted: 'personal_financial_completed'
     };
@@ -247,7 +247,7 @@ export function transformPropertyForAirtable(appProperty, options = {}) {
   if (appProperty.completedIntake !== undefined) transformed.property_intake_completed = appProperty.completedIntake || false;
   if (appProperty.photosCompleted !== undefined) transformed.photos_completed = appProperty.photosCompleted || false;
   if (appProperty.consultationCompleted !== undefined) transformed.consultation_completed = appProperty.consultationCompleted || false;
-  if (appProperty.isBuyingHome !== undefined) transformed.is_buying_home = appProperty.isBuyingHome || false;
+  if (appProperty.isBuyingHome !== undefined) transformed.is_buying_a_home = appProperty.isBuyingHome || false;
   if (appProperty.homeCriteriaCompleted !== undefined) transformed.home_criteria_main_completed = appProperty.homeCriteriaCompleted || false;
   if (appProperty.personalFinancialCompleted !== undefined) transformed.personal_financial_completed = appProperty.personalFinancialCompleted || false;
     

@@ -203,28 +203,38 @@ const HomeBuyingTasks = ({ property, onOpenForm, onToggleTaskComplete, onToggleB
         </CardTitle>
       </CardHeader>
       
-      <CardContent className="space-y-4">
+      <CardContent className={`space-y-4 transition-all duration-200 ${
+        isEnabled ? '' : 'pointer-events-none'
+      }`}>
         {tasks.map((task, index) => (
           <div key={task.id} className="space-y-3">
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0 mt-1">
                 {task.completed ? (
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <CheckCircle className={`h-4 w-4 ${
+                    isEnabled ? 'text-green-600' : 'text-gray-400'
+                  }`} />
                 ) : (
                   <Clock className="h-4 w-4 text-gray-400" />
                 )}
               </div>
               <div className="flex-1 space-y-2">
                 <div>
-                  <p className={`text-sm font-medium ${task.completed ? 'text-green-800' : 'text-green-900'}`}>
+                  <p className={`text-sm font-medium ${
+                    isEnabled 
+                      ? (task.completed ? 'text-green-800' : 'text-green-900')
+                      : 'text-gray-500'
+                  }`}>
                     {task.title}
                   </p>
-                  <p className="text-xs text-green-700">
+                  <p className={`text-xs ${
+                    isEnabled ? 'text-green-700' : 'text-gray-400'
+                  }`}>
                     {task.description}
                   </p>
                 </div>
                 <div className="flex gap-2 flex-wrap">
-                  {!task.completed && task.action && (
+                  {!task.completed && task.action && isEnabled && (
                     <Button 
                       size="sm" 
                       className="bg-green-600 hover:bg-green-700 text-white text-xs py-1 px-3 h-7"
@@ -233,7 +243,7 @@ const HomeBuyingTasks = ({ property, onOpenForm, onToggleTaskComplete, onToggleB
                       {task.actionText}
                     </Button>
                   )}
-                  {task.completionField && (
+                  {task.completionField && isEnabled && (
                     <Button 
                       size="sm" 
                       variant="outline"
@@ -250,6 +260,16 @@ const HomeBuyingTasks = ({ property, onOpenForm, onToggleTaskComplete, onToggleB
                           console.error('❌ onToggleTaskComplete function not available');
                         }
                       }}
+                    >
+                      {task.completed ? 'Mark Incomplete' : 'Mark Complete'}
+                    </Button>
+                  )}
+                  {task.completionField && !isEnabled && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      disabled
+                      className="text-xs py-1 px-3 h-7 border-gray-300 text-gray-400 cursor-not-allowed"
                     >
                       {task.completed ? 'Mark Incomplete' : 'Mark Complete'}
                     </Button>
