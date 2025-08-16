@@ -78,6 +78,14 @@ export function transformProperty(airtableRecord) {
       lastUpdated: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'lastUpdated'),
       purchaseDate: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'purchaseDate'),
       
+      // Milestone Task Completion Fields
+      completedIntake: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'completedIntake'),
+      photosCompleted: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'photosCompleted'),
+      consultationCompleted: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'consultationCompleted'),
+      isBuyingHome: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'isBuyingHome'),
+      homeCriteriaCompleted: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'homeCriteriaCompleted'),
+      personalFinancialCompleted: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, 'personalFinancialCompleted'),
+      
       // System Fields
       _createdTime: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, '_createdTime') || airtableRecord._createdTime,
       _recordId: getFieldValue(airtableRecord, PROPERTIES_FIELD_MAPPING, '_recordId') || airtableRecord.id
@@ -199,6 +207,14 @@ export function transformPropertyForAirtable(appProperty) {
     app_phone: appProperty.phone || '',
     app_is_buying_home: appProperty.is_buying_home || false,
     app_referred_by: appProperty.referred_by || '',
+    
+    // Milestone Task Completion Fields
+    completed_intake: appProperty.completedIntake || false,
+    photos_completed: appProperty.photosCompleted || false,
+    consultation_completed: appProperty.consultationCompleted || false,
+    is_buying_home: appProperty.isBuyingHome || false,
+    home_criteria_main_completed: appProperty.homeCriteriaCompleted || false,
+    personal_financial_completed: appProperty.personalFinancialCompleted || false,
     
     // ATTOM Data fields - Core ATTOM ID (always include if available)
     ...(appProperty.attom_id && { attom_id: appProperty.attom_id }),

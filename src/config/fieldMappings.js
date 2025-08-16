@@ -218,6 +218,38 @@ export const PROPERTIES_FIELD_MAPPING = {
     default: false
   },
   
+  // Milestone Task Completion Fields (as per PDF documentation)
+  completedIntake: {
+    airtableFields: ['completed_intake', 'property_intake_completed', 'intake_completed'],
+    type: 'boolean',
+    default: false
+  },
+  photosCompleted: {
+    airtableFields: ['photos_completed', 'media_completed', 'upload_photos_completed'],
+    type: 'boolean',
+    default: false
+  },
+  consultationCompleted: {
+    airtableFields: ['consultation_completed', 'agent_consultation_completed'],
+    type: 'boolean',
+    default: false
+  },
+  isBuyingHome: {
+    airtableFields: ['is_buying_home', 'is_buying_a_home', 'buying_home'],
+    type: 'boolean',
+    default: false
+  },
+  homeCriteriaCompleted: {
+    airtableFields: ['home_criteria_main_completed', 'home_criteria_completed'],
+    type: 'boolean',
+    default: false
+  },
+  personalFinancialCompleted: {
+    airtableFields: ['personal_financial_completed', 'financial_completed'],
+    type: 'boolean',
+    default: false
+  },
+  
   // System Fields
   _createdTime: {
     airtableFields: ['_createdTime'],

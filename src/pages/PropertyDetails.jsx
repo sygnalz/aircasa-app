@@ -22,33 +22,36 @@ import {
   Calendar
 } from 'lucide-react';
 
-const TaskListPanel = ({ property, onOpenForm }) => {
-  // Task completion logic based on property data
+const TaskListPanel = ({ property, onOpenForm, onTaskComplete }) => {
+  // Task completion logic based on property data from Airtable
   const tasks = [
     {
       id: 'property-intake',
       title: 'Complete Property Intake',
       description: 'Fill out detailed property information',
-      completed: !!(property.description && property.bedrooms && property.bathrooms),
+      completed: !!(property.completedIntake),
       actionText: 'Fill Out Form',
       actionColor: 'bg-blue-600 hover:bg-blue-700',
-      action: () => onOpenForm('intake')
+      action: () => onOpenForm('intake'),
+      completionField: 'completedIntake'
     },
     {
       id: 'photos-media',
       title: 'Upload Photos & Media',
       description: 'Professional photos and virtual tour',
-      completed: !!(property.images && property.images.length > 0),
+      completed: !!(property.photosCompleted),
       actionText: 'Order Services',
-      actionColor: 'bg-green-600 hover:bg-green-700'
+      actionColor: 'bg-green-600 hover:bg-green-700',
+      completionField: 'photosCompleted'
     },
     {
       id: 'agent-consultation',
       title: 'Schedule Agent Consultation',
       description: 'Meet with your real estate agent',
-      completed: false, // This would come from actual booking data
+      completed: !!(property.consultationCompleted),
       actionText: 'Schedule Now',
-      actionColor: 'bg-purple-600 hover:bg-purple-700'
+      actionColor: 'bg-purple-600 hover:bg-purple-700',
+      completionField: 'consultationCompleted'
     }
   ];
 
@@ -95,13 +98,25 @@ const TaskListPanel = ({ property, onOpenForm }) => {
                   </p>
                 </div>
                 {!task.completed && (
-                  <Button 
-                    size="sm" 
-                    className={`text-xs py-1 px-3 h-7 ${task.actionColor} text-white`}
-                    onClick={task.action}
-                  >
-                    {task.actionText}
-                  </Button>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button 
+                      size="sm" 
+                      className={`text-xs py-1 px-3 h-7 ${task.actionColor} text-white`}
+                      onClick={task.action}
+                    >
+                      {task.actionText}
+                    </Button>
+                    {task.completionField && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-xs py-1 px-3 h-7 border-gray-300 hover:bg-gray-50"
+                        onClick={() => onTaskComplete(task.completionField)}
+                      >
+                        Mark Complete
+                      </Button>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -113,23 +128,50 @@ const TaskListPanel = ({ property, onOpenForm }) => {
   );
 };
 
-const HomeBuyingTasks = ({ onOpenForm }) => {
+const HomeBuyingTasks = ({ property, onOpenForm, onTaskComplete, onToggleBuyingHome }) => {
+  // Only show if user is buying a home
+  if (!property?.isBuyingHome) {
+    return (
+      <Card className="bg-green-50 border-green-200">
+        <CardContent className="p-6 text-center">
+          <div className="space-y-4">
+            <Home className="h-12 w-12 text-green-600 mx-auto" />
+            <div>
+              <h3 className="text-lg font-medium text-green-900">Home Buying Tasks</h3>
+              <p className="text-sm text-green-700 mt-2">
+                Enable home buying tasks if you're also purchasing a new home
+              </p>
+            </div>
+            <button
+              onClick={() => onToggleBuyingHome(true)}
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+            >
+              I am buying a home
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const tasks = [
     {
       id: 'home-criteria',
       title: 'Complete Home Criteria',
       description: 'Define your ideal home preferences',
-      completed: false,
+      completed: !!(property.homeCriteriaCompleted),
       actionText: 'Fill Out Form',
-      action: () => onOpenForm('home_criteria')
+      action: () => onOpenForm('home_criteria'),
+      completionField: 'homeCriteriaCompleted'
     },
     {
       id: 'personal-financials',
       title: 'Complete Personal Financials',
       description: 'Provide financial information for pre-approval',
-      completed: false,
+      completed: !!(property.personalFinancialCompleted),
       actionText: 'Fill Out Form',
-      action: () => onOpenForm('financial')
+      action: () => onOpenForm('financial'),
+      completionField: 'personalFinancialCompleted'
     }
   ];
 
@@ -139,9 +181,12 @@ const HomeBuyingTasks = ({ onOpenForm }) => {
         <CardTitle className="flex items-center gap-2 text-lg text-green-800">
           <Home className="h-5 w-5" />
           Home Buying Tasks
-          <Badge className="ml-auto bg-green-100 text-green-800 border-green-300">
-            I am buying a home
-          </Badge>
+          <button
+            onClick={() => onToggleBuyingHome(false)}
+            className="ml-auto bg-green-100 hover:bg-green-200 text-green-800 border-green-300 px-3 py-1 rounded-full text-xs font-medium transition-colors"
+          >
+            ✓ I am buying a home
+          </button>
         </CardTitle>
       </CardHeader>
       
@@ -158,13 +203,25 @@ const HomeBuyingTasks = ({ onOpenForm }) => {
                   <p className="text-xs text-green-700">
                     {task.description}
                   </p>
-                  <Button 
-                    size="sm" 
-                    className="bg-green-600 hover:bg-green-700 text-white text-xs py-1 px-3 h-7"
-                    onClick={task.action}
-                  >
-                    {task.actionText}
-                  </Button>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button 
+                      size="sm" 
+                      className="bg-green-600 hover:bg-green-700 text-white text-xs py-1 px-3 h-7"
+                      onClick={task.action}
+                    >
+                      {task.actionText}
+                    </Button>
+                    {task.completionField && !task.completed && (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-xs py-1 px-3 h-7 border-green-300 hover:bg-green-50"
+                        onClick={() => onTaskComplete(task.completionField)}
+                      >
+                        Mark Complete
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -182,6 +239,7 @@ export default function PropertyDetails() {
   const [error, setError] = useState(null);
   const [showFilloutModal, setShowFilloutModal] = useState(false);
   const [filloutFormUrl, setFilloutFormUrl] = useState("");
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     const loadProperty = async () => {
@@ -245,6 +303,54 @@ export default function PropertyDetails() {
     console.log('✅ Setting form URL:', url);
     setFilloutFormUrl(url);
     setShowFilloutModal(true);
+  };
+
+  const toggleBuyingHome = async (value) => {
+    if (updating) return;
+    
+    try {
+      setUpdating(true);
+      console.log('🔄 Toggling buying home status to:', value);
+      
+      const updatedPropertyData = {
+        ...property,
+        isBuyingHome: value
+      };
+      
+      const updatedProperty = await properties.update(propertyId, updatedPropertyData);
+      setProperty(updatedProperty);
+      
+      console.log('✅ Buying home status updated successfully');
+    } catch (error) {
+      console.error('❌ Error updating buying home status:', error);
+      // Optionally show user feedback here
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const markTaskComplete = async (completionField) => {
+    if (updating) return;
+    
+    try {
+      setUpdating(true);
+      console.log('🔄 Marking task complete:', completionField);
+      
+      const updatedPropertyData = {
+        ...property,
+        [completionField]: true
+      };
+      
+      const updatedProperty = await properties.update(propertyId, updatedPropertyData);
+      setProperty(updatedProperty);
+      
+      console.log('✅ Task marked as complete:', completionField);
+    } catch (error) {
+      console.error('❌ Error marking task complete:', error);
+      // Optionally show user feedback here
+    } finally {
+      setUpdating(false);
+    }
   };
 
   if (loading) {
@@ -311,8 +417,17 @@ export default function PropertyDetails() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Left Sidebar - Task List */}
           <div className="lg:col-span-1 space-y-6">
-            <TaskListPanel property={property} onOpenForm={openFilloutForm} />
-            <HomeBuyingTasks onOpenForm={openFilloutForm} />
+            <TaskListPanel 
+              property={property} 
+              onOpenForm={openFilloutForm} 
+              onTaskComplete={markTaskComplete}
+            />
+            <HomeBuyingTasks 
+              property={property}
+              onOpenForm={openFilloutForm} 
+              onTaskComplete={markTaskComplete}
+              onToggleBuyingHome={toggleBuyingHome}
+            />
           </div>
 
           {/* Main Content */}
