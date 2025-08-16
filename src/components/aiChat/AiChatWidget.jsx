@@ -30,9 +30,10 @@ const AiChatWidget = () => {
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [audioEnabled, setAudioEnabled] = useState(false);
+  const [audioEnabled, setAudioEnabled] = useState(true); // Enable by default
   const [hasError, setHasError] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [alwaysListeningActive, setAlwaysListeningActive] = useState(false);
 
   // Refs
   const messagesEndRef = useRef(null);
@@ -75,6 +76,39 @@ const AiChatWidget = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle Always Listening mode
+  useEffect(() => {
+    const handleAlwaysListening = async () => {
+      if (voiceMode === AI_CHAT_CONFIG.VOICE_MODES.ALWAYS_LISTENING && 
+          widgetState === WIDGET_STATES.EXPANDED && 
+          isInitialized && 
+          !isProcessing) {
+        
+        if (!alwaysListeningActive) {
+          try {
+            const { default: aiChatService } = await import('@/services/aiChatService');
+            await aiChatService.startListening();
+            setAlwaysListeningActive(true);
+          } catch (error) {
+            console.error('Failed to start always listening:', error);
+          }
+        }
+      } else {
+        if (alwaysListeningActive) {
+          try {
+            const { default: aiChatService } = await import('@/services/aiChatService');
+            aiChatService.stopListening();
+            setAlwaysListeningActive(false);
+          } catch (error) {
+            console.error('Failed to stop always listening:', error);
+          }
+        }
+      }
+    };
+
+    handleAlwaysListening();
+  }, [voiceMode, widgetState, isInitialized, isProcessing, alwaysListeningActive]);
 
   const initializeChat = async (aiChatService) => {
     if (!user || !aiChatService) return;
@@ -176,21 +210,41 @@ const AiChatWidget = () => {
   const toggleVoiceListening = async () => {
     if (!isInitialized) return;
     
-    try {
-      const { default: aiChatService } = await import('@/services/aiChatService');
-      
-      if (isListening) {
-        aiChatService.stopListening();
-      } else {
-        try {
-          await aiChatService.startListening();
-        } catch (error) {
-          alert('Microphone access required for voice features');
+    // Handle Click-to-Talk mode
+    if (voiceMode === AI_CHAT_CONFIG.VOICE_MODES.CLICK_TO_TALK) {
+      try {
+        const { default: aiChatService } = await import('@/services/aiChatService');
+        
+        if (isListening) {
+          aiChatService.stopListening();
+        } else {
+          try {
+            await aiChatService.startListening();
+          } catch (error) {
+            alert('Microphone access required for voice features');
+          }
         }
+      } catch (error) {
+        console.error('Voice service error:', error);
       }
-    } catch (error) {
-      console.error('Voice service error:', error);
     }
+    
+    // Always Listening mode is handled by the useEffect
+  };
+
+  const handleVoiceModeChange = async (newMode) => {
+    // Stop current listening before changing mode
+    if (isListening || alwaysListeningActive) {
+      try {
+        const { default: aiChatService } = await import('@/services/aiChatService');
+        aiChatService.stopListening();
+        setAlwaysListeningActive(false);
+      } catch (error) {
+        console.error('Failed to stop listening:', error);
+      }
+    }
+    
+    setVoiceMode(newMode);
   };
 
   const playAudioResponse = (audioUrl) => {
@@ -281,7 +335,7 @@ const AiChatWidget = () => {
           <span className="text-sm font-medium">Voice Mode</span>
           <select
             value={voiceMode}
-            onChange={(e) => setVoiceMode(e.target.value)}
+            onChange={(e) => handleVoiceModeChange(e.target.value)}
             className="text-xs border rounded px-2 py-1"
           >
             <option value={AI_CHAT_CONFIG.VOICE_MODES.TEXT_ONLY}>Text Only</option>
@@ -302,6 +356,24 @@ const AiChatWidget = () => {
               audioEnabled ? 'translate-x-5' : 'translate-x-1'
             }`} />
           </button>
+        </div>
+
+        {/* API Status indicators */}
+        <div className="border-t pt-3 mt-3">
+          <div className="text-xs text-gray-600 space-y-1">
+            <div className="flex items-center justify-between">
+              <span>OpenAI API:</span>
+              <span className={import.meta.env.VITE_OPENAI_API_KEY ? 'text-green-600' : 'text-red-600'}>
+                {import.meta.env.VITE_OPENAI_API_KEY ? '✓ Connected' : '✗ Not configured'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span>ElevenLabs API:</span>
+              <span className={AI_CHAT_CONFIG.ELEVENLABS.API_KEY ? 'text-green-600' : 'text-red-600'}>
+                {AI_CHAT_CONFIG.ELEVENLABS.API_KEY ? '✓ Connected' : '✗ Not configured'}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -365,7 +437,13 @@ const AiChatWidget = () => {
           
           {/* Status indicators */}
           <div className="flex items-center gap-2 mt-2">
-            {isListening && (
+            {voiceMode === AI_CHAT_CONFIG.VOICE_MODES.ALWAYS_LISTENING && alwaysListeningActive && (
+              <Badge variant="secondary" className="text-xs bg-blue-500 text-white">
+                <Mic className="h-3 w-3 mr-1" />
+                Always Listening
+              </Badge>
+            )}
+            {isListening && voiceMode === AI_CHAT_CONFIG.VOICE_MODES.CLICK_TO_TALK && (
               <Badge variant="secondary" className="text-xs bg-green-500 text-white">
                 <Mic className="h-3 w-3 mr-1" />
                 Listening
@@ -375,6 +453,12 @@ const AiChatWidget = () => {
               <Badge variant="secondary" className="text-xs bg-orange-500 text-white">
                 <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                 Processing
+              </Badge>
+            )}
+            {audioEnabled && (
+              <Badge variant="secondary" className="text-xs bg-purple-500 text-white">
+                <Volume2 className="h-3 w-3 mr-1" />
+                Audio
               </Badge>
             )}
           </div>
@@ -418,14 +502,25 @@ const AiChatWidget = () => {
             {voiceMode !== AI_CHAT_CONFIG.VOICE_MODES.TEXT_ONLY && (
               <button
                 onClick={toggleVoiceListening}
-                disabled={isProcessing}
+                disabled={isProcessing || voiceMode === AI_CHAT_CONFIG.VOICE_MODES.ALWAYS_LISTENING}
                 className={`p-2 rounded-lg transition-colors ${
-                  isListening 
+                  isListening || alwaysListeningActive
                     ? 'bg-red-500 text-white' 
                     : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
                 } disabled:opacity-50`}
+                title={
+                  voiceMode === AI_CHAT_CONFIG.VOICE_MODES.ALWAYS_LISTENING 
+                    ? 'Always listening mode active'
+                    : isListening 
+                    ? 'Stop listening' 
+                    : 'Click to talk'
+                }
               >
-                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                {(isListening || alwaysListeningActive) ? (
+                  <MicOff className="h-4 w-4" />
+                ) : (
+                  <Mic className="h-4 w-4" />
+                )}
               </button>
             )}
             

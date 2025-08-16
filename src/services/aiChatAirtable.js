@@ -136,6 +136,16 @@ class AiChatAirtableService {
     }));
   }
 
+  // Alias for OpenAI integration
+  async getSessionMessages(sessionId, limit = 50) {
+    const messages = await this.getChatHistory(sessionId, limit);
+    return messages.map(msg => ({
+      type: msg.message_type,
+      text: msg.message_text,
+      timestamp: msg.timestamp
+    }));
+  }
+
   /**
    * USER VOICE PREFERENCES OPERATIONS
    */

@@ -24,7 +24,7 @@ import {
   Bell,
   Search,
 } from 'lucide-react';
-import AiChatWidgetSimple from '@/components/aiChat/AiChatWidgetSimple';
+import AiChatWidget from '@/components/aiChat/AiChatWidget';
 
 // Dynamic navigation based on role (passed as props)
 const getIconComponent = (iconName) => {
@@ -200,7 +200,7 @@ export function AppLayout({ user, navigationItems, userMenuItems, roleInfo, chil
       </main>
 
       {/* aiChat Widget - Available on all pages */}
-      <AiChatWidgetSimple />
+      <AiChatWidget />
     </div>
   );
 }

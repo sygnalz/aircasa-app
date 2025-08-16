@@ -224,16 +224,143 @@ class VoiceService {
   }
 
   /**
-   * ELEVENLABS INTEGRATION (Future Enhancement)
+   * ELEVENLABS INTEGRATION
    */
 
   async generateElevenLabsAudio(text, voiceId, options = {}) {
-    // This would integrate with ElevenLabs API
-    // For now, return null to indicate no audio generated
-    console.log('🎵 ElevenLabs generation requested:', { text: text.substring(0, 50), voiceId });
+    const apiKey = AI_CHAT_CONFIG.ELEVENLABS.API_KEY;
     
-    // Mock implementation - in production, this would call ElevenLabs API
-    return null;
+    if (!apiKey) {
+      console.log('🎵 ElevenLabs API key not available, skipping generation');
+      return null;
+    }
+
+    try {
+      console.log('🎵 Generating ElevenLabs audio:', { 
+        text: text.substring(0, 50) + '...', 
+        voiceId: voiceId || AI_CHAT_CONFIG.ELEVENLABS.VOICE_ID 
+      });
+
+      const targetVoiceId = voiceId || AI_CHAT_CONFIG.ELEVENLABS.VOICE_ID;
+      const url = `https://api.elevenlabs.io/v1/text-to-speech/${targetVoiceId}`;
+
+      const requestBody = {
+        text: text,
+        model_id: AI_CHAT_CONFIG.ELEVENLABS.MODEL_ID || "eleven_monolingual_v1",
+        voice_settings: {
+          stability: options.stability || AI_CHAT_CONFIG.ELEVENLABS.DEFAULT_VOICE_SETTINGS.stability,
+          similarity_boost: options.similarity_boost || AI_CHAT_CONFIG.ELEVENLABS.DEFAULT_VOICE_SETTINGS.similarity_boost,
+          style: options.style || AI_CHAT_CONFIG.ELEVENLABS.DEFAULT_VOICE_SETTINGS.style,
+          use_speaker_boost: options.use_speaker_boost || AI_CHAT_CONFIG.ELEVENLABS.DEFAULT_VOICE_SETTINGS.use_speaker_boost
+        }
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': apiKey
+        },
+        body: JSON.stringify(requestBody)
+      });
+
+      if (!response.ok) {
+        throw new Error(`ElevenLabs API error: ${response.status} ${response.statusText}`);
+      }
+
+      // Convert response to blob and create URL
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      console.log('✅ ElevenLabs audio generated successfully');
+      return audioUrl;
+
+    } catch (error) {
+      console.error('❌ ElevenLabs generation failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Play ElevenLabs generated audio
+   */
+  async playElevenLabsAudio(audioUrl, options = {}) {
+    return new Promise((resolve, reject) => {
+      const audio = new Audio(audioUrl);
+      audio.setAttribute('data-aichat', 'true');
+      
+      // Configure audio
+      audio.volume = options.volume || 1.0;
+      audio.playbackRate = options.playbackRate || 1.0;
+
+      audio.onloadstart = () => {
+        console.log('🔊 ElevenLabs audio loading...');
+        this.onSpeechStart?.();
+      };
+
+      audio.onplay = () => {
+        console.log('🔊 ElevenLabs audio started playing');
+      };
+
+      audio.onended = () => {
+        console.log('🔊 ElevenLabs audio finished');
+        this.onSpeechEnd?.();
+        // Clean up the blob URL
+        URL.revokeObjectURL(audioUrl);
+        resolve();
+      };
+
+      audio.onerror = (error) => {
+        console.error('🔊 ElevenLabs audio error:', error);
+        this.onSpeechError?.(error);
+        // Clean up the blob URL
+        URL.revokeObjectURL(audioUrl);
+        reject(error);
+      };
+
+      audio.play().catch(reject);
+    });
+  }
+
+  /**
+   * Enhanced voice generation with ElevenLabs fallback
+   */
+  async generateAndPlayVoice(text, options = {}) {
+    try {
+      // Try ElevenLabs first if available
+      if (AI_CHAT_CONFIG.ELEVENLABS.API_KEY) {
+        const audioUrl = await this.generateElevenLabsAudio(text, options.voiceId, options);
+        if (audioUrl) {
+          await this.playElevenLabsAudio(audioUrl, options);
+          return true;
+        }
+      }
+
+      // Fallback to browser synthesis
+      if (this.isSupported.synthesis) {
+        await this.speak(text, options);
+        return true;
+      }
+
+      console.warn('No voice synthesis available');
+      return false;
+
+    } catch (error) {
+      console.error('Voice generation failed:', error);
+      
+      // Ultimate fallback to browser synthesis
+      if (this.isSupported.synthesis) {
+        try {
+          await this.speak(text, options);
+          return true;
+        } catch (fallbackError) {
+          console.error('Fallback voice synthesis also failed:', fallbackError);
+        }
+      }
+      
+      return false;
+    }
   }
 
   /**

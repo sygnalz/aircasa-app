@@ -6,6 +6,7 @@
 import { AI_CHAT_CONFIG, MESSAGE_TYPES, USER_INTENTS, WIDGET_STATES } from '@/config/aiChatConfig';
 import aiChatAirtable from './aiChatAirtable';
 import voiceService from './voiceService';
+import openAiService from './openAiService';
 import { properties, users } from '@/api/functions'; // Existing AirCasa API functions
 
 class AiChatService {
@@ -240,13 +241,36 @@ class AiChatService {
   }
 
   async generateAIResponse(message, intent) {
-    // Build context-aware prompt
-    const context = this.buildContextPrompt();
-    const prompt = `${context}\n\nUser: ${message}\n\nAI:`;
-    
-    // For now, return contextual responses based on intent and user data
-    // In production, this would integrate with OpenAI API or similar
-    return this.generateContextualResponse(message, intent);
+    try {
+      // Check if OpenAI is available and use it for intelligent responses
+      if (openAiService.isApiAvailable()) {
+        console.log('🧠 Using OpenAI for intelligent response generation');
+        
+        // Format chat history for OpenAI
+        const chatHistory = await this.getChatHistory();
+        const formattedMessages = openAiService.formatMessages(chatHistory);
+        
+        // Add current message
+        formattedMessages.push({ role: 'user', content: message });
+        
+        // Generate response with full context awareness
+        const response = await openAiService.generateResponse(formattedMessages, this.userContext);
+        
+        // Log performance metrics
+        console.log('✅ OpenAI response generated successfully');
+        return response;
+        
+      } else {
+        console.log('💭 OpenAI not available, using contextual fallback responses');
+        // Fallback to contextual responses when OpenAI is not available
+        return this.generateContextualResponse(message, intent);
+      }
+      
+    } catch (error) {
+      console.error('❌ Error in AI response generation:', error);
+      // Always fallback to contextual responses on error
+      return this.generateContextualResponse(message, intent);
+    }
   }
 
   buildContextPrompt() {
@@ -317,32 +341,33 @@ Provide helpful, concise responses about real estate, property selling, and usin
 
   async generateVoiceResponse(text) {
     try {
-      // Try ElevenLabs first (if configured)
-      if (AI_CHAT_CONFIG.ELEVENLABS.API_KEY) {
-        const audioUrl = await voiceService.generateElevenLabsAudio(
-          text, 
-          AI_CHAT_CONFIG.ELEVENLABS.VOICE_ID
-        );
-        if (audioUrl) {
-          return audioUrl;
-        }
+      if (!this.shouldGenerateVoice()) {
+        return null;
       }
 
-      // Fallback to browser speech synthesis
-      if (voiceService.isSpeechSynthesisSupported() && this.shouldGenerateVoice()) {
-        // Use browser TTS as fallback - speak directly
-        await voiceService.speak(text, {
-          rate: this.voicePreferences?.voice_speed || 1.0,
-          volume: 1.0
-        });
-        
-        return 'browser_tts'; // Special indicator for browser TTS
+      console.log('🔊 Generating voice response for:', text.substring(0, 50) + '...');
+
+      // Use the enhanced voice generation with ElevenLabs fallback
+      const voiceOptions = {
+        voiceId: this.voicePreferences?.preferred_voice_id || AI_CHAT_CONFIG.ELEVENLABS.VOICE_ID,
+        rate: this.voicePreferences?.voice_speed || 1.0,
+        volume: 1.0,
+        stability: this.voicePreferences?.voice_stability || 0.5,
+        similarity_boost: this.voicePreferences?.voice_clarity || 0.5
+      };
+
+      const success = await voiceService.generateAndPlayVoice(text, voiceOptions);
+      
+      if (success) {
+        console.log('✅ Voice response generated and playing');
+        return 'voice_generated'; // Indicate voice was generated
+      } else {
+        console.log('⚠️ Voice generation failed');
+        return null;
       }
       
-      return null;
-      
     } catch (error) {
-      console.error('Voice generation failed:', error);
+      console.error('❌ Voice generation error:', error);
       return null;
     }
   }
@@ -462,6 +487,25 @@ Provide helpful, concise responses about real estate, property selling, and usin
   }
 
   /**
+   * CHAT HISTORY
+   */
+
+  async getChatHistory() {
+    if (!this.currentSession) {
+      return [];
+    }
+
+    try {
+      // Get recent messages from current session
+      const messages = await aiChatAirtable.getSessionMessages(this.currentSession.sessionId, 10); // Last 10 messages
+      return messages || [];
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+      return [];
+    }
+  }
+
+  /**
    * UTILITY METHODS
    */
 
@@ -475,6 +519,21 @@ Provide helpful, concise responses about real estate, property selling, and usin
 
   getUserContext() {
     return this.userContext;
+  }
+
+  /**
+   * API KEY MANAGEMENT
+   */
+
+  setOpenAiApiKey(apiKey) {
+    openAiService.setApiKey(apiKey);
+    console.log('🔑 OpenAI API key configured');
+  }
+
+  setElevenLabsApiKey(apiKey) {
+    // Update ElevenLabs configuration
+    AI_CHAT_CONFIG.ELEVENLABS.API_KEY = apiKey;
+    console.log('🔑 ElevenLabs API key configured');
   }
 }
 

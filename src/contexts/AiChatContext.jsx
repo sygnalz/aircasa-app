@@ -26,6 +26,9 @@ export const AiChatProvider = ({ children }) => {
     try {
       console.log('🤖 Initializing AirCasa aiChat...');
       
+      // Lazy load the aiChat service to avoid startup errors
+      const { default: aiChatService } = await import('@/services/aiChatService');
+      
       // Set up service event listeners
       aiChatService.on('sessionStarted', (session) => {
         setCurrentSession(session);
@@ -50,6 +53,8 @@ export const AiChatProvider = ({ children }) => {
     } catch (error) {
       console.error('Failed to initialize aiChat:', error);
       setError(error.message);
+      // Don't fail the entire app - just disable aiChat
+      setIsInitialized(false);
     }
   };
 

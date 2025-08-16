@@ -46,7 +46,7 @@ export const AI_CHAT_CONFIG = {
     API_KEY: import.meta.env.VITE_ELEVENLABS_API_KEY || '',
     VOICE_ID: 'pNInz6obpgDQGcFmaJgB', // Default voice
     MODEL_ID: 'eleven_monolingual_v1',
-    VOICE_SETTINGS: {
+    DEFAULT_VOICE_SETTINGS: {
       stability: 0.5,
       similarity_boost: 0.5,
       style: 0.0,
