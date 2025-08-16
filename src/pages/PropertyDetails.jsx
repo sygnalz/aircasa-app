@@ -22,7 +22,7 @@ import {
   Calendar
 } from 'lucide-react';
 
-const TaskListPanel = ({ property, onOpenForm, onToggleTaskComplete }) => {
+const TaskListPanel = ({ property, onOpenForm, onToggleTaskComplete, onNavigateToPhotos }) => {
   // Task completion logic based on property data from Airtable
   const tasks = [
     {
@@ -48,7 +48,7 @@ const TaskListPanel = ({ property, onOpenForm, onToggleTaskComplete }) => {
         {
           text: 'Schedule Now',
           color: 'bg-blue-600 hover:bg-blue-700',
-          action: () => navigate(`/photo-packages/${propertyId}`)
+          action: onNavigateToPhotos
         },
         {
           text: 'Upload',
@@ -547,6 +547,11 @@ export default function PropertyDetails() {
   const progressPercentage = calculateProgressCompletion();
   const isReadyForMLS = progressPercentage === 100;
 
+  // Navigation handler for photo packages
+  const handleNavigateToPhotos = () => {
+    navigate(`/photo-packages/${propertyId}`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -570,6 +575,7 @@ export default function PropertyDetails() {
               property={property} 
               onOpenForm={openFilloutForm} 
               onToggleTaskComplete={toggleTaskComplete}
+              onNavigateToPhotos={handleNavigateToPhotos}
             />
             <HomeBuyingTasks 
               property={property}
