@@ -92,7 +92,15 @@ class AiChatService {
     try {
       // Load property data from existing AirCasa tables
       const propertyData = await properties.get(propertyId);
-      const userData = await users.get ? await users.get(userId) : { id: userId };
+      
+      // Try to get user data - users service has getById method, not get
+      let userData;
+      try {
+        userData = await users.getById(userId);
+      } catch (userError) {
+        console.log('Could not load user data, using basic info:', userError);
+        userData = { id: userId };
+      }
       
       this.userContext = {
         user: userData,

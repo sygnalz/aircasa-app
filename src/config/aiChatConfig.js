@@ -34,7 +34,7 @@ export const AI_CHAT_CONFIG = {
 
   // WebSocket configuration
   WEBSOCKET: {
-    URL: process.env.NODE_ENV === 'production' 
+    URL: import.meta.env.MODE === 'production' 
       ? 'wss://your-production-websocket-url' 
       : 'ws://localhost:8080',
     RECONNECT_ATTEMPTS: 5,
@@ -43,7 +43,7 @@ export const AI_CHAT_CONFIG = {
 
   // ElevenLabs configuration
   ELEVENLABS: {
-    API_KEY: process.env.ELEVENLABS_API_KEY || '',
+    API_KEY: import.meta.env.VITE_ELEVENLABS_API_KEY || '',
     VOICE_ID: 'pNInz6obpgDQGcFmaJgB', // Default voice
     MODEL_ID: 'eleven_monolingual_v1',
     VOICE_SETTINGS: {

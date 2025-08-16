@@ -200,7 +200,8 @@ export function AppLayout({ user, navigationItems, userMenuItems, roleInfo, chil
       </main>
 
       {/* aiChat Widget - Available on all pages */}
-      <AiChatWidget />
+      {/* Temporarily disabled for debugging */}
+      {/* <AiChatWidget /> */}
     </div>
   );
 }
