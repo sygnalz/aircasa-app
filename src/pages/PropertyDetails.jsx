@@ -140,24 +140,26 @@ const TaskListPanel = ({ property, onOpenForm, onToggleTaskComplete }) => {
 };
 
 const HomeBuyingTasks = ({ property, onOpenForm, onToggleTaskComplete, onToggleBuyingHome }) => {
-  // Only show if user is buying a home
-  if (!property?.isBuyingHome) {
+  const isEnabled = property?.isBuyingHome;
+  
+  // Show disabled state when home buying is not enabled (is_buying_a_home = false)
+  if (!isEnabled) {
     return (
-      <Card className="bg-green-50 border-green-200">
+      <Card className="bg-gray-50 border-gray-200 opacity-75">
         <CardContent className="p-6 text-center">
           <div className="space-y-4">
-            <Home className="h-12 w-12 text-green-600 mx-auto" />
+            <Home className="h-12 w-12 text-gray-400 mx-auto" />
             <div>
-              <h3 className="text-lg font-medium text-green-900">Home Buying Tasks</h3>
-              <p className="text-sm text-green-700 mt-2">
+              <h3 className="text-lg font-medium text-gray-600">Home Buying Tasks</h3>
+              <p className="text-sm text-gray-500 mt-2">
                 Enable home buying tasks if you're also purchasing a new home
               </p>
             </div>
             <button
               onClick={() => onToggleBuyingHome(true)}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
             >
-              I am buying a home
+              Enable Home Buying Tasks
             </button>
           </div>
         </CardContent>
