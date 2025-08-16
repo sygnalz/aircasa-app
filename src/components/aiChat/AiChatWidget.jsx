@@ -46,8 +46,6 @@ const AiChatWidget = () => {
   // Initialize chat service with error handling
   useEffect(() => {
     const initializeWithErrorHandling = async () => {
-      if (!user) return;
-      
       try {
         // Import aiChatService only when needed to avoid initialization errors
         const { default: aiChatService } = await import('@/services/aiChatService');
@@ -76,7 +74,7 @@ const AiChatWidget = () => {
     };
 
     initializeWithErrorHandling();
-  }, [user]);
+  }, [user]); // Keep user dependency for re-initialization when auth changes
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -117,18 +115,19 @@ const AiChatWidget = () => {
   }, [voiceMode, widgetState, isInitialized, isProcessing, alwaysListeningActive]);
 
   const initializeChat = async (aiChatService) => {
-    if (!user || !aiChatService) return;
+    if (!aiChatService) return;
 
     try {
       const propertyId = getCurrentPropertyId();
-      const userId = user.id || user.email;
+      const userId = user?.id || user?.email || 'demo-user';
       
       if (!aiChatService.isSessionActive()) {
         await aiChatService.startChatSession(userId, propertyId, voiceMode);
       }
+      console.log('✅ aiChat session initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize chat session (Airtable error):', error);
-      console.log('💡 Widget will continue to work in fallback mode without Airtable session');
+      console.error('Failed to initialize chat session:', error);
+      console.log('💡 Widget will continue to work in fallback mode');
       // Don't set hasError to true - allow widget to show in fallback mode
       setIsInitialized(true); // Allow widget to be usable even without Airtable
     }
@@ -196,33 +195,25 @@ const AiChatWidget = () => {
     try {
       const { default: aiChatService } = await import('@/services/aiChatService');
       
-      // Check if we have an active session
-      if (aiChatService.isSessionActive()) {
-        await aiChatService.processUserMessage(userMessage.text);
-      } else {
-        // Fallback mode - provide direct responses
-        setIsProcessing(true);
-        setTimeout(() => {
-          const fallbackResponse = getFallbackResponse(userMessage.text);
-          setMessages(prev => [...prev, {
-            id: `msg_${Date.now()}_fallback`,
-            type: MESSAGE_TYPES.AI,
-            text: fallbackResponse,
-            timestamp: new Date().toISOString(),
-            fallback: true
-          }]);
-          setIsProcessing(false);  
-        }, 800);
-      }
+      // Try to process the message - the service will handle session creation automatically
+      await aiChatService.processUserMessage(userMessage.text);
+      
     } catch (error) {
       console.error('Failed to process message:', error);
-      setMessages(prev => [...prev, {
-        id: `msg_${Date.now()}_error`,
-        type: MESSAGE_TYPES.AI,
-        text: "I'm currently running in fallback mode due to an Airtable connection issue. I can still help with basic questions!",
-        timestamp: new Date().toISOString(),
-        error: true
-      }]);
+      
+      // Enhanced fallback with OpenAI/ElevenLabs capabilities shown
+      setIsProcessing(true);
+      setTimeout(() => {
+        const fallbackResponse = getFallbackResponse(userMessage.text);
+        setMessages(prev => [...prev, {
+          id: `msg_${Date.now()}_enhanced_fallback`,
+          type: MESSAGE_TYPES.AI,
+          text: fallbackResponse,
+          timestamp: new Date().toISOString(),
+          fallback: true
+        }]);
+        setIsProcessing(false);  
+      }, 800);
     }
   };
 

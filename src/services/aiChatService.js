@@ -43,14 +43,42 @@ class AiChatService {
     try {
       console.log('🚀 Starting aiChat session:', { userId, propertyId, voiceMode });
       
-      this.currentSession = await aiChatAirtable.createChatSession(userId, propertyId, voiceMode);
+      // Try to create Airtable session, but don't fail if it doesn't work
+      try {
+        this.currentSession = await aiChatAirtable.createChatSession(userId, propertyId, voiceMode);
+        console.log('✅ Airtable session created successfully');
+      } catch (airtableError) {
+        console.log('⚠️ Airtable session creation failed, using fallback mode:', airtableError.message);
+        // Create fallback session
+        this.currentSession = {
+          sessionId: `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          userId,
+          propertyId,
+          voiceMode,
+          fallbackMode: true,
+          startTime: new Date().toISOString()
+        };
+      }
       
       // Load user context (property data, preferences)
       await this.loadUserContext(userId, propertyId);
       
-      // Initialize voice preferences
-      const voicePrefs = await aiChatAirtable.getUserVoicePreferences(userId);
-      this.voicePreferences = voicePrefs;
+      // Initialize voice preferences (fallback if Airtable fails)
+      try {
+        const voicePrefs = await aiChatAirtable.getUserVoicePreferences(userId);
+        this.voicePreferences = voicePrefs;
+      } catch (error) {
+        console.log('⚠️ Using default voice preferences due to Airtable error');
+        this.voicePreferences = {
+          user_id: userId,
+          preferred_voice_mode: voiceMode,
+          voice_speed: 1.0,
+          voice_stability: 0.5,
+          voice_clarity: 0.5,
+          auto_play_responses: true, // Enable by default for better UX
+          background_listening: false
+        };
+      }
       
       // Send welcome message
       await this.sendWelcomeMessage();
@@ -199,7 +227,16 @@ class AiChatService {
 
   async processUserMessage(message, messageType = 'text') {
     if (!this.currentSession) {
-      throw new Error('No active chat session');
+      console.error('No active chat session, attempting to start one...');
+      // Try to start a session automatically for voice input
+      try {
+        const userId = 'fallback-user';
+        const propertyId = 'dashboard';
+        await this.startChatSession(userId, propertyId, AI_CHAT_CONFIG.VOICE_MODES.CLICK_TO_TALK);
+      } catch (error) {
+        console.error('Failed to auto-start session:', error);
+        throw new Error('No active chat session');
+      }
     }
 
     const startTime = Date.now();
@@ -207,27 +244,40 @@ class AiChatService {
     this.emit('processingStarted');
 
     try {
-      // Save user message to Airtable
+      // Save user message to Airtable (optional - skip if in fallback mode)
       const userIntent = this.classifyUserIntent(message);
-      await aiChatAirtable.saveChatMessage(
-        this.currentSession.sessionId,
-        MESSAGE_TYPES.USER,
-        message,
-        userIntent
-      );
+      
+      if (!this.currentSession.fallbackMode) {
+        try {
+          await aiChatAirtable.saveChatMessage(
+            this.currentSession.sessionId,
+            MESSAGE_TYPES.USER,
+            message,
+            userIntent
+          );
+        } catch (error) {
+          console.log('⚠️ Failed to save user message to Airtable, continuing in fallback mode');
+        }
+      }
 
       // Generate AI response
       const aiResponse = await this.generateAIResponse(message, userIntent);
       const responseTime = Date.now() - startTime;
 
-      // Save AI response to Airtable
-      await aiChatAirtable.saveChatMessage(
-        this.currentSession.sessionId,
-        MESSAGE_TYPES.AI,
-        aiResponse,
-        userIntent,
-        responseTime
-      );
+      // Save AI response to Airtable (optional - skip if in fallback mode)
+      if (!this.currentSession.fallbackMode) {
+        try {
+          await aiChatAirtable.saveChatMessage(
+            this.currentSession.sessionId,
+            MESSAGE_TYPES.AI,
+            aiResponse,
+            userIntent,
+            responseTime
+          );
+        } catch (error) {
+          console.log('⚠️ Failed to save AI response to Airtable, continuing in fallback mode');
+        }
+      }
 
       // Generate voice if enabled
       let audioUrl = null;
@@ -555,12 +605,19 @@ Provide helpful, concise responses about real estate, property selling, and usin
   async sendWelcomeMessage() {
     const welcomeText = this.generateWelcomeMessage();
     
-    await aiChatAirtable.saveChatMessage(
-      this.currentSession.sessionId,
-      MESSAGE_TYPES.AI,
-      welcomeText,
-      USER_INTENTS.GENERAL
-    );
+    // Save to Airtable only if not in fallback mode
+    if (!this.currentSession.fallbackMode) {
+      try {
+        await aiChatAirtable.saveChatMessage(
+          this.currentSession.sessionId,
+          MESSAGE_TYPES.AI,
+          welcomeText,
+          USER_INTENTS.GENERAL
+        );
+      } catch (error) {
+        console.log('⚠️ Failed to save welcome message to Airtable, continuing in fallback mode');
+      }
+    }
 
     this.emit('messageReceived', {
       text: welcomeText,
@@ -646,6 +703,11 @@ Provide helpful, concise responses about real estate, property selling, and usin
 
   async getChatHistory() {
     if (!this.currentSession) {
+      return [];
+    }
+
+    // Return empty history in fallback mode - OpenAI will work with current context
+    if (this.currentSession.fallbackMode) {
       return [];
     }
 
