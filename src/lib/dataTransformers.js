@@ -197,8 +197,15 @@ export function transformPropertyForAirtable(appProperty) {
     app_last_name: appProperty.last_name || '',
     app_email: appProperty.email,
     app_phone: appProperty.phone || '',
-    app_is_buying_home: appProperty.is_buying_home || false,
+    is_buying_a_home: appProperty.isBuyingHome || false,
     app_referred_by: appProperty.referred_by || '',
+    
+    // Task completion fields (using correct Airtable field names)
+    ...(appProperty.completedIntake !== undefined && { property_intake_completed: appProperty.completedIntake }),
+    ...(appProperty.photosCompleted !== undefined && { photos_completed: appProperty.photosCompleted }),
+    ...(appProperty.consultationCompleted !== undefined && { consultation_completed: appProperty.consultationCompleted }),
+    ...(appProperty.homeCriteriaCompleted !== undefined && { home_criteria_main_completed: appProperty.homeCriteriaCompleted }),
+    ...(appProperty.personalFinancialCompleted !== undefined && { personal_financial_completed: appProperty.personalFinancialCompleted }),
     
     // ATTOM Data fields - Core ATTOM ID (always include if available)
     ...(appProperty.attom_id && { attom_id: appProperty.attom_id }),
