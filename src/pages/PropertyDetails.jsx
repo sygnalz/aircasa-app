@@ -350,7 +350,13 @@ export default function PropertyDetails() {
         isBuyingHome: value
       };
       
-      const updatedProperty = await properties.update(propertyId, updatedPropertyData);
+      // Specify selective update options
+      const updateOptions = {
+        onlyChangedFields: true,
+        changedFields: ['isBuyingHome']
+      };
+      
+      const updatedProperty = await properties.update(propertyId, updatedPropertyData, updateOptions);
       setProperty(updatedProperty);
       
       console.log('✅ Buying home status updated successfully');
@@ -374,14 +380,22 @@ export default function PropertyDetails() {
       console.log(`🔄 toggleTaskComplete called with: ${completionField}, current: ${currentStatus}, new: ${newStatus}`);
       console.log('🔄 Current property data:', property);
       
+      // Create minimal update object with only the changed field
       const updatedPropertyData = {
         ...property,
         [completionField]: newStatus
       };
       
-      console.log('🔄 Updated property data to send:', updatedPropertyData);
+      // Specify selective update options
+      const updateOptions = {
+        onlyChangedFields: true,
+        changedFields: [completionField]
+      };
       
-      const updatedProperty = await properties.update(propertyId, updatedPropertyData);
+      console.log('🔄 Updated property data to send:', updatedPropertyData);
+      console.log('🔄 Update options:', updateOptions);
+      
+      const updatedProperty = await properties.update(propertyId, updatedPropertyData, updateOptions);
       setProperty(updatedProperty);
       
       console.log(`✅ Task ${newStatus ? 'completed' : 'marked incomplete'} successfully:`, completionField);

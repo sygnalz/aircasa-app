@@ -70,10 +70,12 @@ export const properties = {
   },
 
   // Update a property
-  async update(propertyId, propertyData) {
+  async update(propertyId, propertyData, options = {}) {
     try {
       validateProperty(propertyData);
-      const airtableFields = transformPropertyForAirtable(propertyData);
+      
+      // Pass options to transformer to enable selective field updates
+      const airtableFields = transformPropertyForAirtable(propertyData, options);
       const airtableRecord = await propertiesService.update(propertyId, airtableFields);
       return transformProperty(airtableRecord);
     } catch (error) {
